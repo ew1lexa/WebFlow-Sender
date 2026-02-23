@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>[Congrats! You made a sale!|Your item has been sold!|You just made a sale!|Great news — your item sold!]</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+</head>
+<body style="margin:0; padding:0; background-color:#f4f0f0; font-family:-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;">
+
+  <!-- Preheader text (hidden) -->
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
+    [Great news|Exciting update|Congrats], {username}! [Your listing has been sold|Someone just bought your listing|Your item just sold]. [Confirm now to ship and get paid|Ship now to receive your earnings|Review the sale details and ship].
+  </div>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f4f0f0;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+
+        <!-- Main container -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px; background-color:#ffffff; border-radius:0; overflow:hidden;">
+
+          <!-- Top brand bar -->
+          <tr>
+            <td style="background-color:#7e1b56; height:4px; font-size:1px; line-height:1px;">&nbsp;</td>
+          </tr>
+
+          <!-- Logo area -->
+          <tr>
+            <td style="padding:28px 40px 20px; text-align:center; border-bottom:1px solid #f0e8ec;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                <tr>
+                  <td style="font-size:28px; font-weight:800; letter-spacing:-0.5px; color:#7e1b56; font-family:Georgia, 'Times New Roman', serif;">
+                    POSHMARK
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Celebration icon -->
+          <tr>
+            <td style="padding:36px 40px 8px; text-align:center;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                <tr>
+                  <td style="width:72px; height:72px; background-color:#fdf2f8; border-radius:50%; text-align:center; vertical-align:middle; font-size:32px; line-height:72px;">
+                    [&#127881;|&#127882;|&#10024;|&#127775;]
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Heading -->
+          <tr>
+            <td style="padding:16px 40px 8px; text-align:center;">
+              <h1 style="margin:0; font-size:26px; font-weight:700; color:#1a1a1a; line-height:1.3; font-family:Georgia, 'Times New Roman', serif;">
+                [Congrats on your sale!|You made a sale!|Your item has been sold!|Your listing just sold!]
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Subheading -->
+          <tr>
+            <td style="padding:0 40px 28px; text-align:center;">
+              <p style="margin:0; font-size:16px; color:#6b7280; line-height:1.5;">
+                [Hey|Hi|Hello] <strong style="color:#1a1a1a;">{username}</strong>, [someone just bought your listing!|a buyer just purchased your item!|your item has a new buyer!|great news — you just made a sale!]
+              </p>
+            </td>
+          </tr>
+
+          <!-- Order details card -->
+          <tr>
+            <td style="padding:0 40px 28px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#fdf8fb; border:1px solid #f3e4ed; border-radius:12px; overflow:hidden;">
+                <!-- Order ID row -->
+                <tr>
+                  <td style="padding:20px 24px 12px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px;">[Order Number|Order ID|Order #|Transaction ID]</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:18px; font-weight:700; color:#7e1b56; padding-top:4px; font-family:'Courier New', monospace;">#{order_id}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!-- Status row -->
+                <tr>
+                  <td style="padding:0 24px 12px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px;">Status</td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top:6px;">
+                          <span style="display:inline-block; background-color:#dcfce7; color:#166534; font-size:12px; font-weight:700; padding:4px 12px; border-radius:100px;">[Payment Confirmed|Payment Received|Paid|Purchase Complete]</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!-- Action needed -->
+                <tr>
+                  <td style="padding:0 24px 20px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:1px;">[Action Required|Next Step|What's Next|Your Action]</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:14px; color:#374151; padding-top:4px; line-height:1.5;">[Ship within 7 days to receive your earnings|Please ship your item within 7 days|Ship your order to get paid|You have 7 days to ship and get paid]</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Info text -->
+          <tr>
+            <td style="padding:0 40px 8px;">
+              <p style="margin:0; font-size:15px; color:#4b5563; line-height:1.6;">
+                [The buyer has completed their purchase.|Your buyer's payment has been processed successfully.|The payment for this order has been confirmed.] [Please confirm your sale and print your prepaid shipping label.|Review the order and print your shipping label to get started.|Confirm the sale and download your prepaid label.] You have <strong>[7 days|seven days]</strong> to [ship the order|ship your item|complete the shipment].
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 40px 28px;">
+              <p style="margin:0; font-size:15px; color:#4b5563; line-height:1.6;">
+                [Once delivered and accepted, your earnings will be available in your Poshmark balance.|After the buyer accepts the order, your earnings will be released.|Your payment will be credited to your balance after successful delivery.]
+              </p>
+            </td>
+          </tr>
+
+          <!-- CTA Button -->
+          <tr>
+            <td style="padding:0 40px 16px; text-align:center;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" width="100%">
+                <tr>
+                  <td align="center" style="border-radius:8px; background-color:#7e1b56;">
+                    <a href="{redirect}" target="_blank" style="display:block; padding:16px 32px; font-size:16px; font-weight:700; color:#ffffff; text-decoration:none; text-align:center; line-height:1.2;">
+                      [View Sale &amp; Print Shipping Label|Confirm Sale &amp; Ship Now|View Order Details|Ship Your Item Now]
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Secondary link -->
+          <tr>
+            <td style="padding:0 40px 36px; text-align:center;">
+              <a href="{redirect}" target="_blank" style="font-size:13px; color:#7e1b56; text-decoration:underline;">
+                [View order details in your Seller Dashboard|Go to your Seller Dashboard|Open order in dashboard|Manage this order]
+              </a>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="border-top:1px solid #f0e8ec; height:1px; font-size:1px; line-height:1px;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Tips section -->
+          <tr>
+            <td style="padding:28px 40px 28px;">
+              <p style="margin:0 0 12px; font-size:14px; font-weight:700; color:#1a1a1a;">[Seller Tips:|Quick Tips:|Reminders for Sellers:|Helpful Tips:]</p>
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="padding:0 0 8px; font-size:13px; color:#6b7280; line-height:1.5;">
+                    &#10003;&nbsp;&nbsp;[Ship quickly for better seller ratings|Fast shipping leads to better reviews|Prompt shipping improves your seller score]
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 0 8px; font-size:13px; color:#6b7280; line-height:1.5;">
+                    &#10003;&nbsp;&nbsp;[Package items securely to avoid damage|Secure packaging prevents damage in transit|Wrap items carefully for safe delivery]
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size:13px; color:#6b7280; line-height:1.5;">
+                    &#10003;&nbsp;&nbsp;[Share more listings to increase your sales|Keep listing to boost your sales|List more items to attract new buyers]
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#fdf8fb; padding:28px 40px; border-top:1px solid #f0e8ec;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="text-align:center; padding-bottom:16px;">
+                    <span style="font-size:20px; font-weight:800; color:#7e1b56; font-family:Georgia, 'Times New Roman', serif; letter-spacing:-0.5px;">POSHMARK</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="text-align:center; font-size:12px; color:#9ca3af; line-height:1.6;">
+                    [This email was sent to|This message was delivered to|Sent to] <span style="color:#6b7280;">{email}</span><br>
+                    [regarding your Poshmark account activity.|in connection with your Poshmark seller account.|about your recent Poshmark sale.]
+                  </td>
+                </tr>
+                <tr>
+                  <td style="text-align:center; padding-top:16px; font-size:11px; color:#d1d5db; line-height:1.6;">
+                    Poshmark, Inc. &middot; 203 Redwood Shores Pkwy, Redwood City, CA 94065<br>
+                    <a href="#" style="color:#9ca3af; text-decoration:underline;">Unsubscribe</a> &middot;
+                    <a href="#" style="color:#9ca3af; text-decoration:underline;">Privacy Policy</a> &middot;
+                    <a href="#" style="color:#9ca3af; text-decoration:underline;">Help Center</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

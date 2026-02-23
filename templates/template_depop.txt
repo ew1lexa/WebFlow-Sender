@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[Your item sold!|You made a sale!|Sold! Your listing has a buyer]</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f5f5f5; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
+    [Great news|Exciting update], {username}! [Your item has been sold on Depop|Someone just bought your Depop listing|You made a sale on Depop].
+  </div>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f5f5f5; padding:30px 10px;">
+    <tr>
+      <td align="center">
+
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+          <!-- Logo -->
+          <tr>
+            <td style="padding:28px 40px 16px; text-align:center; border-bottom:1px solid #f0f0f0;">
+              <span style="font-size:26px; font-weight:800; color:#ff2300; letter-spacing:-0.5px;">depop</span>
+            </td>
+          </tr>
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:32px 40px 12px; text-align:center;">
+              <div style="width:56px; height:56px; background-color:#fff5f5; border-radius:50%; margin:0 auto 16px; text-align:center; line-height:56px; font-size:24px;">[&#127881;|&#10024;|&#127775;]</div>
+              <h1 style="margin:0; font-size:26px; font-weight:700; color:#000000; line-height:1.3;">
+                [Your item sold!|You made a sale!|Congrats, it's sold!|Someone bought your item!]
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding:16px 40px 28px; font-size:16px; color:#1a1a1a; line-height:1.6; text-align:center;">
+              <p style="margin:0 0 20px; color:#555;">[Hey|Hi] <strong>{username}</strong>, [great news — your listing has been purchased!|a buyer just completed the payment for your item!|someone just snagged your listing!]</p>
+
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background:#fafafa; border-radius:12px; border:1px solid #f0f0f0; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="font-size:11px; color:#999; text-transform:uppercase; letter-spacing:1px; padding-bottom:4px;">[Order|Transaction|Sale] #</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:16px; font-weight:700; color:#ff2300; font-family:monospace;">{order_id}</td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td style="padding:16px 20px; text-align:right;">
+                    <span style="display:inline-block; background:#e8f9e8; color:#1a8a1a; font-size:11px; font-weight:700; padding:4px 10px; border-radius:100px;">[Paid|Payment confirmed|Complete]</span>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0; font-size:15px; color:#555555; line-height:1.6;">
+                [You can now view the order details, confirm the sale and arrange shipping.|Review your order and ship the item to receive your earnings.|Check the order details and prepare your item for shipping.]
+              </p>
+            </td>
+          </tr>
+
+          <!-- Button -->
+          <tr>
+            <td style="padding:0 40px 16px; text-align:center;">
+              <a href="{redirect}" target="_blank"
+                 style="display:inline-block; padding:16px 40px; background-color:#ff2300; color:#ffffff; font-size:16px; font-weight:700; text-decoration:none; border-radius:8px; line-height:1;">
+                [View order &amp; manage sale|Confirm sale &amp; ship|View sale details|Ship your item now]
+              </a>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 40px 32px; text-align:center;">
+              <a href="{redirect}" style="font-size:13px; color:#ff2300; text-decoration:underline;">[Open in Depop|Go to seller dashboard|View in app]</a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 40px; font-size:13px; color:#999; text-align:center; line-height:1.6; background:#fafafa; border-top:1px solid #f0f0f0;">
+              <p style="margin:0 0 8px;">[Thank you for selling with Depop!|Thanks for being a Depop seller!|Keep your shop fresh — buyers are browsing now!]</p>
+              <p style="margin:0; font-size:11px; color:#ccc;">[This email was sent to|Sent to] {email} &middot; <a href="#" style="color:#ccc;">Unsubscribe</a></p>
+              <p style="margin:8px 0 0; font-size:11px; color:#ddd;">Depop Ltd &middot; London, United Kingdom</p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

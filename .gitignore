@@ -1,0 +1,48 @@
+# Конфигурация и секреты (не публиковать в репозитории)
+config.json
+cookies.json
+settings.json
+.env
+.env.local
+*.env
+
+# Аккаунты (токены, прокси)
+accounts/*.json
+!accounts/.gitkeep
+
+# Логи и аналитика (генерируются при работе)
+logs/
+*.log
+analytics.json
+
+# Временные и служебные файлы
+temp_template.txt
+page_source.html
+*.pyc
+__pycache__/
+*.pyo
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+
+# Виртуальное окружение
+venv/
+.venv/
+env/
+ENV/
+
+# IDE и ОС
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Опционально: раскомментируйте, если не хотите коммитить шаблоны с личными данными
+# templates/template_*.txt

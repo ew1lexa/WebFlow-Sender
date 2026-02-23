@@ -1,0 +1,31 @@
+{
+  "site_id": "YOUR_SITE_ID",
+  "element_id": "YOUR_FORM_ELEMENT_ID",
+  "page_id": "YOUR_PAGE_ID",
+  "site_name": "your-site-name",
+  "domain": "your-site.webflow.io",
+  "session_id": "YOUR_SESSION_ID_FROM_BROWSER",
+  "xsrf_token": "YOUR_XSRF_TOKEN_FROM_BROWSER",
+  "email_sender_name": "",
+  "email_reply_tos": ["no-reply@webflow.com"],
+  "template_file": "templates/template.txt",
+  "template_main_file": "templates/template_depop.txt",
+  "template_inbox_file": "templates/template_inbox.txt",
+  "email_subject_main": "Sold! Listing closed, payment received",
+  "email_subject_inbox": "Account Notification",
+  "dual_mode_delay": 3.5,
+  "batch_size": 5,
+  "batch_delay": 3.5,
+  "form_name": "Email Form",
+  "form_settings_url": "https://your-site.design.webflow.com/api/v1/site/YOUR_SITE_ID/form/YOUR_ELEMENT_ID/settings",
+  "publish_url": "https://your-site.design.webflow.com/api/sites/your-site/queue-publish",
+  "task_status_url": "https://your-site.design.webflow.com/api/site/your-site/tasks/{task_id}",
+  "form_submit_url": "https://webflow.com/api/v1/form/YOUR_SITE_ID",
+  "origin": "https://your-site.design.webflow.com",
+  "referer": "https://your-site.design.webflow.com/",
+  "source": "https://your-site.webflow.io/",
+  "publish_target": "your-site.webflow.io",
+  "additional_headers": {
+    "x-content-type-options": "nosniff"
+  }
+}

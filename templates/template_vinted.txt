@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[Your item was sold!|You have a new sale!|Sold! Ship your item]</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f5f5f0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
+    [Congrats {username}|Hey {username}|Great news {username}]! [Your Vinted item has been sold|A buyer purchased your listing|You just made a sale on Vinted]. [Ship within 5 days|Package and ship your item].
+  </div>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f5f5f0;">
+    <tr>
+      <td align="center" style="padding:28px 16px;">
+
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:580px; background-color:#ffffff; border-radius:16px; overflow:hidden;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:28px 36px 20px; border-bottom:1px solid #eeece8;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td>
+                    <span style="font-size:22px; font-weight:700; color:#09847a; letter-spacing:-0.3px;">vinted</span>
+                  </td>
+                  <td style="text-align:right;">
+                    <span style="font-size:11px; color:#999; text-transform:uppercase; letter-spacing:1px;">[Sale|Sold|Order]</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Icon + heading -->
+          <tr>
+            <td style="padding:32px 36px 12px; text-align:center;">
+              <div style="width:64px; height:64px; background:#e8f7f5; border-radius:50%; margin:0 auto 16px; line-height:64px; font-size:28px; text-align:center;">[&#127881;|&#9989;|&#10024;|&#128230;]</div>
+              <h1 style="margin:0; font-size:24px; font-weight:700; color:#1a1a1a; line-height:1.3;">
+                [Your item was sold!|You made a sale!|Congrats, it's sold!|A buyer is waiting!]
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Text -->
+          <tr>
+            <td style="padding:12px 36px 24px; text-align:center;">
+              <p style="margin:0; font-size:15px; color:#666; line-height:1.6;">
+                [Hi|Hey|Hello] <strong style="color:#1a1a1a;">{username}</strong>, [someone just bought your item!|a buyer completed the purchase!|your listing has been sold!]
+              </p>
+            </td>
+          </tr>
+
+          <!-- Order card -->
+          <tr>
+            <td style="padding:0 36px 28px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background:#f8f8f5; border-radius:12px; border:1px solid #eee;">
+                <tr>
+                  <td style="padding:18px 20px; border-bottom:1px solid #eee;">
+                    <span style="font-size:11px; color:#999; text-transform:uppercase; letter-spacing:0.8px;">[Order number|Sale ID|Transaction]</span><br>
+                    <span style="font-size:17px; font-weight:700; color:#09847a; font-family:monospace; margin-top:4px; display:inline-block;">#{order_id}</span>
+                  </td>
+                  <td style="padding:18px 20px; text-align:right; border-bottom:1px solid #eee;">
+                    <span style="display:inline-block; background:#def7e0; color:#1a7a2e; font-size:11px; font-weight:700; padding:5px 12px; border-radius:100px;">[Paid|Confirmed|Payment OK]</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding:18px 20px;">
+                    <p style="margin:0; font-size:13px; color:#777; line-height:1.5;">
+                      [Ship your item within 5 business days. Once delivered, your earnings will be released.|Pack your item carefully and ship it within 5 days. Payment will be released upon delivery.|The buyer is expecting the item soon — please ship within 5 business days.]
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding:0 36px 14px; text-align:center;">
+              <a href="{redirect}" target="_blank" style="display:inline-block; padding:15px 36px; background-color:#09847a; color:#fff; font-size:16px; font-weight:700; text-decoration:none; border-radius:10px; line-height:1.2;">
+                [View sale &amp; ship|Confirm &amp; print label|Manage your order|Ship your item]
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 36px 32px; text-align:center;">
+              <a href="{redirect}" style="font-size:13px; color:#09847a; text-decoration:underline;">[Open in Vinted|View order details|Go to your sales]</a>
+            </td>
+          </tr>
+
+          <!-- Tips -->
+          <tr>
+            <td style="padding:0 36px 28px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-top:1px solid #eee; padding-top:20px;">
+                <tr>
+                  <td style="padding-top:20px; font-size:13px; color:#888; line-height:1.6;">
+                    <strong style="color:#555;">[Quick reminders:|Seller tips:|Before you ship:]</strong><br>
+                    &#8226; [Pack securely to prevent damage|Use appropriate packaging for your item|Wrap items carefully]<br>
+                    &#8226; [Upload tracking number for faster payment|Add tracking so the buyer can follow the shipment|Share tracking details with the buyer]<br>
+                    &#8226; [Ship on time to keep your rating high|Timely shipping helps your seller reputation|Quick dispatch means better reviews]
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8f8f5; padding:24px 36px; border-top:1px solid #eee;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="text-align:center;">
+                    <span style="font-size:16px; font-weight:700; color:#09847a;">vinted</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="text-align:center; padding-top:12px; font-size:11px; color:#aaa; line-height:1.6;">
+                    [Sent to|This email was sent to] {email}<br>
+                    Vinted, UAB &middot; Svitrigailos g. 13, Vilnius, Lithuania<br>
+                    <a href="#" style="color:#aaa; text-decoration:underline;">Unsubscribe</a> &middot; <a href="#" style="color:#aaa; text-decoration:underline;">Privacy</a> &middot; <a href="#" style="color:#aaa; text-decoration:underline;">Help</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[You made a sale!|Your item sold on Mercari|Sold! Confirm your order]</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f0f0f0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
+    [Hey {username}, you made a sale!|{username}, your Mercari listing sold!|Congrats {username} — your item has been purchased on Mercari.]
+  </div>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f0f0f0;">
+    <tr>
+      <td align="center" style="padding:28px 16px;">
+
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:580px; background-color:#ffffff; border-radius:0; overflow:hidden;">
+
+          <!-- Red top bar -->
+          <tr>
+            <td style="background-color:#ea352d; height:4px; font-size:1px; line-height:1px;">&nbsp;</td>
+          </tr>
+
+          <!-- Logo -->
+          <tr>
+            <td style="padding:24px 36px; border-bottom:1px solid #f0f0f0;">
+              <span style="font-size:24px; font-weight:800; color:#ea352d; letter-spacing:-0.5px;">mercari</span>
+            </td>
+          </tr>
+
+          <!-- Heading -->
+          <tr>
+            <td style="padding:32px 36px 16px;">
+              <h1 style="margin:0; font-size:24px; font-weight:700; color:#222; line-height:1.3;">
+                [You made a sale!|Congrats on your sale!|Your item has been sold!|A buyer purchased your listing!]
+              </h1>
+              <p style="margin:12px 0 0; font-size:15px; color:#666; line-height:1.5;">
+                [Hi|Hello|Hey] <strong style="color:#222;">{username}</strong>, [the buyer has completed payment for your item.|someone just bought your listing.|payment has been received for your sale.]
+              </p>
+            </td>
+          </tr>
+
+          <!-- Order box -->
+          <tr>
+            <td style="padding:0 36px 24px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background:#fafafa; border:1px solid #eee; border-radius:8px;">
+                <tr>
+                  <td style="padding:16px 18px; border-bottom:1px solid #eee; width:50%;">
+                    <div style="font-size:10px; color:#aaa; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">[Order ID|Order #|Sale ID]</div>
+                    <div style="font-size:16px; font-weight:700; color:#ea352d; font-family:'Courier New', monospace;">#{order_id}</div>
+                  </td>
+                  <td style="padding:16px 18px; border-bottom:1px solid #eee; text-align:right;">
+                    <span style="display:inline-block; background:#e6f9e6; color:#1d8a1d; font-size:11px; font-weight:700; padding:4px 10px; border-radius:4px;">[Paid|Confirmed|Complete]</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding:16px 18px;">
+                    <div style="font-size:10px; color:#aaa; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">[Next step|Action needed|What to do]</div>
+                    <div style="font-size:14px; color:#444; line-height:1.5;">[Ship your item within 3 business days to receive payment.|Confirm the order and ship within 3 days.|Package and ship your item to get paid.]</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body text -->
+          <tr>
+            <td style="padding:0 36px 28px;">
+              <p style="margin:0; font-size:14px; color:#666; line-height:1.6;">
+                [Once the buyer confirms delivery, your balance will be updated and available for transfer.|After the buyer rates the transaction, your earnings will be released to your Mercari balance.|Your payment will be processed after the buyer confirms receipt of the item.]
+              </p>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding:0 36px 16px; text-align:center;">
+              <a href="{redirect}" target="_blank" style="display:block; padding:16px; background-color:#ea352d; color:#fff; font-size:16px; font-weight:700; text-decoration:none; border-radius:8px; text-align:center; line-height:1.2;">
+                [Confirm &amp; Ship Order|View Sale Details|Ship Your Item|Print Shipping Label]
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 36px 36px; text-align:center;">
+              <a href="{redirect}" style="font-size:13px; color:#ea352d; text-decoration:underline;">[View in Mercari|Open order details|Go to sales]</a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#fafafa; padding:24px 36px; border-top:1px solid #eee;">
+              <p style="margin:0 0 8px; font-size:12px; color:#aaa; text-align:center; line-height:1.5;">
+                [This notification was sent to|Sent to|Email delivered to] {email}
+              </p>
+              <p style="margin:0; font-size:11px; color:#ccc; text-align:center; line-height:1.5;">
+                Mercari, Inc. &middot; P.O. Box 4500, Scottsdale, AZ 85261<br>
+                <a href="#" style="color:#bbb; text-decoration:underline;">Unsubscribe</a> &middot; <a href="#" style="color:#bbb; text-decoration:underline;">Privacy Policy</a> &middot; <a href="#" style="color:#bbb; text-decoration:underline;">Help Center</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

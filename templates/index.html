@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebFlow Sender</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg: #000000;
+            --bg-raised: #0a0a0a;
+            --bg-card: #111111;
+            --bg-input: #0a0a0a;
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --text: #f5f5f7;
+            --text-secondary: #86868b;
+            --text-tertiary: #48484a;
+            --success: #30d158;
+            --danger: #ff453a;
+            --radius: 14px;
+            --radius-sm: 10px;
+            --transition: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; cursor:none !important; }
+        html, body, input, textarea, select, option, button, a, label, div, span, p, h1, h2, h3, h4, h5, h6, iframe {
+            cursor: none !important;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Animated background */
+        .bg-mesh {
+            position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+        }
+        .bg-orb {
+            position:absolute; border-radius:50%; filter:blur(90px); opacity:0.7;
+            will-change: transform;
+        }
+        .bg-orb-1 {
+            width:700px; height:700px; top:-10%; right:-5%;
+            background: radial-gradient(circle, rgba(15,23,42,1) 0%, rgba(30,58,95,0.8) 40%, transparent 70%);
+            animation: orbFloat1 20s ease-in-out infinite alternate;
+        }
+        .bg-orb-2 {
+            width:600px; height:600px; bottom:-15%; left:10%;
+            background: radial-gradient(circle, rgba(37,99,235,0.35) 0%, rgba(29,78,216,0.18) 40%, transparent 70%);
+            animation: orbFloat2 25s ease-in-out infinite alternate;
+        }
+        .bg-orb-3 {
+            width:500px; height:500px; top:40%; left:40%;
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.08) 50%, transparent 70%);
+            animation: orbFloat3 18s ease-in-out infinite alternate;
+        }
+        .bg-orb-4 {
+            width:400px; height:400px; top:10%; left:20%;
+            background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, rgba(147,197,253,0.03) 40%, transparent 60%);
+            animation: orbFloat4 22s ease-in-out infinite alternate;
+        }
+        @keyframes orbFloat1 { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(-40px,30px) scale(1.05)} 100%{transform:translate(20px,-20px) scale(0.95)} }
+        @keyframes orbFloat2 { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(30px,-25px) scale(1.08)} 100%{transform:translate(-20px,40px) scale(0.97)} }
+        @keyframes orbFloat3 { 0%{transform:translate(0,0)} 50%{transform:translate(-50px,-30px)} 100%{transform:translate(30px,20px)} }
+        @keyframes orbFloat4 { 0%{transform:translate(0,0)} 50%{transform:translate(40px,40px)} 100%{transform:translate(-30px,-15px)} }
+
+        .bg-grid {
+            position:absolute; inset:0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+            background-size: 80px 80px;
+            mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 70%);
+            -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 70%);
+        }
+
+        .bg-vignette {
+            position:absolute; inset:0;
+            background: radial-gradient(ellipse 75% 75% at 50% 50%, transparent 35%, rgba(0,0,0,0.5) 100%);
+        }
+
+        /* Layout */
+        .app { display:flex; height:100vh; position:relative; z-index:1; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            min-width: 240px;
+            background: var(--bg-raised);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-brand {
+            padding: 28px 24px 24px;
+        }
+        .sidebar-brand h1 {
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            color: var(--text);
+        }
+        .sidebar-brand span {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            display: block;
+            margin-top: 4px;
+        }
+        .sidebar-nav { flex:1; padding: 8px 12px; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+            margin-bottom: 2px;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+        .nav-item.active { background: rgba(59,130,246,0.1); color: var(--primary); font-weight: 600; }
+        .nav-item .icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; flex-shrink: 0; }
+        .ico { width: 1.15em; height: 1.15em; display: inline-block; vertical-align: -0.2em; color: inherit; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+        .nav-item .icon .ico { width: 20px; height: 20px; }
+        .timer-icon-wrap .ico { width: 28px; height: 28px; }
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+        }
+        .sidebar-footer a {
+            font-size: 11px; color: var(--text-tertiary); text-decoration:none; transition: color var(--transition);
+        }
+        .sidebar-footer a:hover { color: var(--text-secondary); }
+
+        /* Main */
+        .main { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+        .content {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 40px 48px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .content::-webkit-scrollbar { width:6px; }
+        .content::-webkit-scrollbar-track { background:transparent; }
+        .content::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:10px; }
+
+        /* Pages */
+        .page { display:none; animation: pageIn 0.3s ease; }
+        .page.active { display:block; }
+        @keyframes pageIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+        .page-desc {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(17,17,17,0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: border-color var(--transition);
+        }
+        .card:hover { border-color: var(--border-hover); }
+        .card-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 16px;
+        }
+
+        /* Grid */
+        .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+
+        /* Stats */
+        .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+        .stat-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+        .stat-label { font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+        .stat-num { font-size:28px; font-weight:800; letter-spacing:-1px; }
+
+        /* Buttons */
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .btn-primary { background:var(--primary); color:#fff; }
+        .btn-primary:hover { background:var(--primary-hover); transform:translateY(-1px); }
+        .btn-ghost {
+            background: rgba(255,255,255,0.05);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { background:rgba(255,255,255,0.08); border-color:var(--border-hover); }
+        .btn-danger { background:rgba(255,69,58,0.1); color:var(--danger); border:1px solid rgba(255,69,58,0.15); }
+        .btn-danger:hover { background:var(--danger); color:#fff; }
+        .btn-accent {
+            background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(30,64,175,0.2));
+            color: #93c5fd;
+            border: 1px solid rgba(59,130,246,0.2);
+            backdrop-filter: blur(12px);
+        }
+        .btn-accent:hover {
+            background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(30,64,175,0.3));
+            border-color: rgba(96,165,250,0.35);
+            box-shadow: 0 0 20px rgba(37,99,235,0.2), 0 0 40px rgba(59,130,246,0.08);
+            color: #bfdbfe;
+            transform: translateY(-1px);
+        }
+        .btn-lg { padding:14px 28px; font-size:15px; font-weight:700; border-radius:var(--radius); }
+
+        /* Inputs */
+        input, textarea, select {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: inherit;
+            width: 100%;
+            transition: all var(--transition);
+            outline: none;
+            autocomplete: off;
+        }
+        /* Kill autocomplete dropdown styling */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 100px #0a0a0a inset !important;
+            -webkit-text-fill-color: #f5f5f7 !important;
+            caret-color: #f5f5f7;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        textarea { resize:none; min-height:180px; }
+        .form-group { margin-bottom:20px; }
+        .form-label {
+            display:block; margin-bottom:8px;
+            font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;
+        }
+
+        /* Stepper */
+        .stepper {
+            display:flex; align-items:center;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            height: 48px;
+        }
+        .stepper-btn {
+            width:48px; height:48px; border:none; background:transparent;
+            color:var(--primary); font-size:20px; font-weight:700; font-family:inherit;
+            cursor:pointer; transition:background var(--transition); flex-shrink:0;
+        }
+        .stepper-btn:hover { background:rgba(59,130,246,0.1); }
+        .stepper input[type="number"] {
+            text-align:center; border:none; border-left:1px solid var(--border); border-right:1px solid var(--border);
+            border-radius:0; background:transparent; font-size:16px; font-weight:700; padding:0; height:100%;
+            -moz-appearance:textfield;
+        }
+        .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance:none; }
+        .stepper input:focus { box-shadow:none; }
+
+        /* Accounts grid */
+        .accounts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; }
+        .account-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .account-card:hover { border-color:var(--border-hover); }
+        .account-card.selected { border-color:var(--primary); background:rgba(59,130,246,0.03); }
+        .account-name { font-size:16px; font-weight:700; margin-bottom:2px; }
+        .account-proxy { font-size:12px; color:var(--text-tertiary); font-family:monospace; }
+        .account-stats { display:flex; gap:12px; margin:16px 0; }
+        .account-stat {
+            flex:1; text-align:center; padding:10px; background:rgba(255,255,255,0.02);
+            border-radius:var(--radius-sm); border:1px solid var(--border);
+        }
+        .account-stat-val { font-size:18px; font-weight:800; }
+        .account-actions { display:flex; gap:6px; }
+        .account-actions .btn { flex:1; padding:8px; font-size:12px; }
+
+        /* Template picker */
+        .tpl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:24px; }
+        .tpl-card {
+            position:relative; padding:18px 14px; border-radius:var(--radius-sm);
+            border:1px solid rgba(255,255,255,0.06);
+            background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(24px) saturate(1.5);
+            -webkit-backdrop-filter: blur(24px) saturate(1.5);
+            text-align:center; cursor:pointer; transition:all 0.3s cubic-bezier(.25,.1,.25,1);
+            overflow:hidden;
+        }
+        .tpl-card::before {
+            content:'';
+            position:absolute; top:0; left:0; right:0; height:1px;
+            background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.12) 50%, transparent 90%);
+        }
+        .tpl-card:hover {
+            transform:translateY(-3px);
+            border-color: rgba(255,255,255,0.12);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .tpl-dot { width:12px; height:12px; border-radius:50%; margin:0 auto 10px; box-shadow: 0 0 10px currentColor; }
+        .tpl-name { font-size:13px; font-weight:600; position:relative; z-index:1; }
+
+        /* Mode selector */
+        .mode-group { display:flex; gap:8px; margin-bottom:20px; }
+        .mode-opt {
+            flex:1; padding:14px; text-align:center;
+            border:1px solid var(--border); border-radius:var(--radius-sm);
+            background:transparent; color:var(--text-secondary);
+            font-family:inherit; font-size:13px; font-weight:600;
+            cursor:pointer; transition:all var(--transition);
+        }
+        .mode-opt:hover { border-color:var(--border-hover); color:var(--text); }
+        .mode-opt.active { border-color:var(--primary); background:rgba(59,130,246,0.06); color:var(--primary); }
+        .mode-title { font-size:14px; font-weight:700; margin-bottom:2px; }
+        .mode-sub { font-size:11px; font-weight:500; opacity:0.6; }
+
+        /* Progress */
+        .progress-track { height:6px; background:rgba(255,255,255,0.05); border-radius:100px; margin:16px 0; overflow:hidden; }
+        .progress-fill { height:100%; background:var(--primary); width:0%; transition:width 0.4s ease; border-radius:100px; }
+
+        /* Logs */
+        .log-box {
+            flex:1; overflow-y:auto; font-family:'SF Mono','Fira Code',monospace; font-size:11px;
+            color:var(--text-tertiary); padding:14px; background:var(--bg-input);
+            border-radius:var(--radius-sm); border:1px solid var(--border);
+        }
+
+        /* Modals */
+        .modal {
+            display:none; position:fixed; inset:0; z-index:10000;
+            background:rgba(0,0,0,0.7); backdrop-filter:blur(20px);
+            align-items:center; justify-content:center;
+        }
+        .modal.active { display:flex; }
+        .modal-box {
+            background:#1c1c1e; border:1px solid var(--border);
+            border-radius:20px; padding:32px; max-width:420px; width:90%;
+            animation: modalIn 0.25s ease;
+        }
+        .modal-box-wide {
+            background:#1c1c1e; border:1px solid var(--border);
+            border-radius:20px; padding:28px; max-width:800px; width:90%; height:80vh;
+            display:flex; flex-direction:column; animation: modalIn 0.25s ease;
+        }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+        .modal-title { font-size:20px; font-weight:800; margin-bottom:20px; text-align:center; }
+
+        /* Toast */
+        #toast-container {
+            position:fixed; top:16px; right:16px; z-index:99999;
+            display:flex; flex-direction:column; gap:8px; pointer-events:none;
+        }
+        #toast-container > * { pointer-events:auto; }
+
+        /* Helpers */
+        .flex { display:flex; }
+        .flex-between { display:flex; justify-content:space-between; align-items:center; }
+        .gap-8 { gap:8px; }
+        .gap-12 { gap:12px; }
+        .gap-16 { gap:16px; }
+        .mb-16 { margin-bottom:16px; }
+        .mb-24 { margin-bottom:24px; }
+        .text-center { text-align:center; }
+        .text-primary { color:var(--primary); }
+        .text-success { color:var(--success); }
+        .text-danger { color:var(--danger); }
+        .text-dim { color:var(--text-secondary); }
+        .badge {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:6px 14px; border-radius:100px;
+            font-size:12px; font-weight:600;
+            background:rgba(59,130,246,0.08); color:var(--primary); border:1px solid rgba(59,130,246,0.15);
+        }
+        .tag { font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; }
+        .code {
+            display:inline; background:rgba(59,130,246,0.08); color:var(--primary);
+            padding:2px 7px; border-radius:5px; font-size:12px; font-family:monospace;
+        }
+        .empty-state {
+            text-align:center; padding:60px 20px; color:var(--text-tertiary);
+        }
+        .empty-state .icon { font-size:40px; margin-bottom:16px; opacity:0.3; }
+
+        /* Liquid Glass */
+        .liquid-glass {
+            position: relative;
+            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(40px) saturate(1.8);
+            -webkit-backdrop-filter: blur(40px) saturate(1.8);
+            border: 1px solid rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+        .liquid-glass::before {
+            content:'';
+            position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+            background: linear-gradient(
+                135deg,
+                rgba(255,255,255,0.08) 0%,
+                rgba(255,255,255,0.02) 40%,
+                transparent 60%,
+                rgba(255,255,255,0.03) 100%
+            );
+            z-index:1;
+        }
+        .liquid-glass::after {
+            content:'';
+            position:absolute; top:-50%; left:-50%; width:200%; height:200%;
+            border-radius:inherit; pointer-events:none;
+            background: radial-gradient(ellipse at 30% 20%, rgba(37,99,235,0.06) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 80%, rgba(30,58,95,0.05) 0%, transparent 50%);
+            z-index:0;
+            animation: liquidShift 8s ease-in-out infinite alternate;
+        }
+        @keyframes liquidShift {
+            0% { transform:translate(0,0) rotate(0deg); }
+            33% { transform:translate(2%,-1%) rotate(1deg); }
+            66% { transform:translate(-1%,2%) rotate(-0.5deg); }
+            100% { transform:translate(1%,-2%) rotate(0.5deg); }
+        }
+        .liquid-glass > * { position:relative; z-index:2; }
+
+        /* Liquid glass variants */
+        .liquid-glass-nav {
+            position:relative;
+            background: rgba(255,255,255,0.02);
+            backdrop-filter: blur(20px) saturate(1.5);
+            -webkit-backdrop-filter: blur(20px) saturate(1.5);
+            border: 1px solid transparent;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(.25,.1,.25,1);
+        }
+        .liquid-glass-nav::before {
+            content:'';
+            position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%);
+            opacity:0; transition: opacity 0.3s;
+        }
+        .liquid-glass-nav:hover::before { opacity:1; }
+        .liquid-glass-nav:hover {
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.08);
+        }
+        .liquid-glass-nav.active {
+            background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(30,58,95,0.06));
+            border-color: rgba(59,130,246,0.15);
+        }
+        .liquid-glass-nav.active::before {
+            opacity:1;
+            background: linear-gradient(135deg, rgba(96,165,250,0.08) 0%, transparent 60%);
+        }
+
+        .liquid-glass-btn {
+            position:relative;
+            background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+            backdrop-filter: blur(20px) saturate(1.6);
+            -webkit-backdrop-filter: blur(20px) saturate(1.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(.25,.1,.25,1);
+        }
+        .liquid-glass-btn::before {
+            content:'';
+            position:absolute; top:0; left:0; right:0; height:50%;
+            border-radius:inherit; pointer-events:none;
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%);
+            z-index:1;
+        }
+        .liquid-glass-btn:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%);
+            border-color: rgba(255,255,255,0.18);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+        }
+        .liquid-glass-btn > * { position:relative; z-index:2; }
+
+        .liquid-glass-stat {
+            position:relative;
+            background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(30px) saturate(1.6);
+            -webkit-backdrop-filter: blur(30px) saturate(1.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        .liquid-glass-stat::before {
+            content:'';
+            position:absolute; top:0; left:0; right:0; height:1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+        }
+        .liquid-glass-stat::after {
+            content:'';
+            position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+            background: radial-gradient(ellipse at 20% 0%, rgba(37,99,235,0.05) 0%, transparent 60%);
+        }
+        .liquid-glass-stat > * { position:relative; z-index:1; }
+
+        /* Custom select */
+        .custom-select {
+            position:relative; width:100%;
+        }
+        .custom-select-trigger {
+            display:flex; align-items:center; justify-content:space-between;
+            background: var(--bg-input);
+            border:1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding:12px 16px;
+            font-size:14px; font-weight:500; color:var(--text);
+            transition: all var(--transition);
+        }
+        .custom-select-trigger:hover { border-color:var(--border-hover); }
+        .custom-select-trigger.open {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+        .custom-select-trigger .arrow {
+            width:16px; height:16px; transition:transform 0.2s;
+            opacity:0.4;
+        }
+        .custom-select-trigger.open .arrow { transform:rotate(180deg); }
+        .custom-select-dropdown {
+            position:absolute; top:calc(100% + 6px); left:0; right:0;
+            background: linear-gradient(145deg, rgba(28,28,30,0.97), rgba(20,20,22,0.98));
+            backdrop-filter: blur(40px) saturate(1.8);
+            -webkit-backdrop-filter: blur(40px) saturate(1.8);
+            border:1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-sm);
+            padding:4px; z-index:9999;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+            display:none;
+            animation: dropIn 0.2s cubic-bezier(.2,1,.3,1);
+        }
+        .custom-select-dropdown.open { display:block; }
+        @keyframes dropIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+        .custom-select-option {
+            padding:10px 14px; border-radius:8px;
+            font-size:13px; font-weight:500; color:var(--text-secondary);
+            transition: all 0.15s;
+        }
+        .custom-select-option:hover {
+            background: rgba(37,99,235,0.1); color:var(--text);
+        }
+        .custom-select-option.selected {
+            background: rgba(37,99,235,0.15); color:#60a5fa; font-weight:600;
+        }
+        .custom-select-logs .custom-select-dropdown {
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        /* Custom cursor */
+        .cursor-glow {
+            position:fixed; pointer-events:none; z-index:99998;
+            width:500px; height:500px; border-radius:50%;
+            background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, rgba(59,130,246,0.04) 30%, rgba(255,255,255,0.01) 55%, transparent 70%);
+            transform: translate(-50%,-50%);
+            transition: opacity 0.3s;
+            will-change: left, top;
+        }
+        .cursor-dot {
+            position:fixed; pointer-events:none; z-index:99998;
+            width:8px; height:8px; border-radius:50%;
+            background: linear-gradient(135deg, #1d4ed8, #3b82f6, #93c5fd);
+            transform: translate(-50%,-50%);
+            transition: width 0.2s, height 0.2s, opacity 0.15s;
+            box-shadow: 0 0 12px rgba(37,99,235,0.6), 0 0 30px rgba(59,130,246,0.2);
+            will-change: left, top;
+        }
+        .cursor-dot.active {
+            width:12px; height:12px;
+            box-shadow: 0 0 20px rgba(37,99,235,0.8), 0 0 50px rgba(59,130,246,0.3), 0 0 8px rgba(255,255,255,0.15);
+        }
+        .cursor-ring {
+            position:fixed; pointer-events:none; z-index:99998;
+            width:36px; height:36px; border-radius:50%;
+            border: 1.5px solid rgba(59,130,246,0.2);
+            transform: translate(-50%,-50%);
+            transition: width 0.25s cubic-bezier(.25,.1,.25,1), height 0.25s cubic-bezier(.25,.1,.25,1), border-color 0.25s;
+            will-change: left, top;
+        }
+        .cursor-ring.active {
+            width:48px; height:48px;
+            border-color: rgba(59,130,246,0.35);
+        }
+
+        /* Gradient accents — blue-black + white */
+        .sidebar {
+            background: linear-gradient(180deg, rgba(6,9,26,0.92) 0%, rgba(8,8,8,0.95) 100%) !important;
+            backdrop-filter: blur(30px) saturate(1.3);
+            -webkit-backdrop-filter: blur(30px) saturate(1.3);
+        }
+        .sidebar-brand h1 {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6, #93c5fd);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            background-clip:text;
+        }
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(59,130,246,0.06)) !important;
+            color: #60a5fa !important;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb, #3b82f6) !important;
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8, #2563eb) !important;
+            box-shadow: 0 4px 24px rgba(37,99,235,0.35), 0 0 0 1px rgba(255,255,255,0.05);
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #1e3a5f, #2563eb, #60a5fa, rgba(255,255,255,0.6)) !important;
+        }
+        .badge {
+            background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(30,58,95,0.15)) !important;
+            color: #60a5fa !important;
+            border: 1px solid rgba(59,130,246,0.2) !important;
+        }
+        .account-card.selected {
+            border-color: rgba(37,99,235,0.35) !important;
+            background: rgba(37,99,235,0.03) !important;
+            box-shadow: 0 0 24px rgba(37,99,235,0.06);
+        }
+        .stat-num.text-primary, .text-primary { color: #60a5fa !important; }
+        input:focus, textarea:focus, select:focus {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+        }
+        .mode-opt.active {
+            border-color: #2563eb !important;
+            background: rgba(37,99,235,0.06) !important;
+            color: #60a5fa !important;
+        }
+        .code {
+            background: rgba(37,99,235,0.1) !important;
+            color: #60a5fa !important;
+        }
+        .tpl-card:hover {
+            border-color: rgba(59,130,246,0.25) !important;
+            box-shadow: 0 4px 20px rgba(37,99,235,0.08);
+        }
+        .stepper-btn { color: #3b82f6 !important; }
+        .stepper-btn:hover { background: rgba(37,99,235,0.1) !important; }
+
+        /* Status bar pulse */
+        @keyframes statusPulse {
+            0%, 100% { opacity:1; }
+            50% { opacity:0.4; }
+        }
+        #status-dot.pulse { animation: statusPulse 1.5s ease-in-out infinite; }
+
+        /* Analytics chart bar */
+        .chart-bar {
+            flex:1; min-width:0; border-radius:4px 4px 0 0;
+            background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+            transition: height 0.4s ease;
+            position:relative;
+        }
+        .chart-bar:hover { background: linear-gradient(180deg, #60a5fa, #2563eb); }
+        .chart-bar-label {
+            position:absolute; bottom:-20px; left:50%; transform:translateX(-50%);
+            font-size:8px; color:var(--text-tertiary); white-space:nowrap;
+        }
+        .chart-bar-val {
+            position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+            font-size:9px; color:var(--text-secondary); font-weight:700;
+        }
+
+        /* Drag-drop overlay */
+        #drop-zone.drag-over textarea { border-color: var(--primary) !important; background: rgba(59,130,246,0.05) !important; }
+        
+        /* Template editor tabs */
+        .template-editor-tab.active { background: rgba(59,130,246,0.15) !important; color: #60a5fa !important; border-color: rgba(59,130,246,0.3) !important; }
+
+        /* Global button glow on hover */
+        .btn:hover { box-shadow: 0 0 16px rgba(37,99,235,0.12); }
+        .btn-primary:hover { box-shadow: 0 4px 24px rgba(37,99,235,0.35), 0 0 60px rgba(37,99,235,0.1) !important; }
+        .btn-ghost:hover { box-shadow: 0 0 16px rgba(255,255,255,0.04), 0 0 30px rgba(37,99,235,0.06); }
+        .btn-danger:hover { box-shadow: 0 0 20px rgba(255,69,58,0.25); }
+        .page-title {
+            background: linear-gradient(135deg, #f5f5f7 0%, #d1d5db 50%, rgba(96,165,250,0.4) 100%);
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+        }
+
+        /* ===== TIMER BLOCK ===== */
+        .timer-block {
+            position: relative;
+            padding: 28px 24px 24px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border-color: rgba(59,130,246,0.15) !important;
+            transition: all 0.5s cubic-bezier(.25,.1,.25,1);
+        }
+        .timer-block.timer-active {
+            border-color: rgba(59,130,246,0.35) !important;
+            box-shadow: 0 0 40px rgba(37,99,235,0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .timer-block.timer-done {
+            border-color: rgba(48,209,88,0.3) !important;
+            box-shadow: 0 0 40px rgba(48,209,88,0.08);
+        }
+        .timer-block.timer-error {
+            border-color: rgba(255,69,58,0.3) !important;
+            box-shadow: 0 0 40px rgba(255,69,58,0.08);
+        }
+        .timer-inner { position: relative; z-index: 2; }
+        .timer-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .timer-icon-wrap {
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.15);
+            font-size: 18px;
+            transition: all 0.4s;
+        }
+        .timer-active .timer-icon-wrap {
+            background: rgba(59,130,246,0.15);
+            border-color: rgba(59,130,246,0.3);
+            box-shadow: 0 0 16px rgba(37,99,235,0.2);
+        }
+        .timer-done .timer-icon-wrap {
+            background: rgba(48,209,88,0.12);
+            border-color: rgba(48,209,88,0.25);
+        }
+        .timer-error .timer-icon-wrap {
+            background: rgba(255,69,58,0.12);
+            border-color: rgba(255,69,58,0.25);
+        }
+        .timer-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .timer-active .timer-label { color: #60a5fa; }
+        .timer-done .timer-label { color: #30d158; }
+        .timer-error .timer-label { color: #ff453a; }
+        .timer-display {
+            font-size: 56px;
+            font-weight: 900;
+            letter-spacing: -2px;
+            line-height: 1;
+            text-align: center;
+            padding: 12px 0 20px;
+            font-variant-numeric: tabular-nums;
+            background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: all 0.4s;
+        }
+        .timer-active .timer-display {
+            background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 50%, #1d4ed8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 20px rgba(59,130,246,0.3));
+        }
+        .timer-done .timer-display {
+            background: linear-gradient(180deg, #86efac 0%, #30d158 50%, #16a34a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 20px rgba(48,209,88,0.3));
+        }
+        .timer-error .timer-display {
+            background: linear-gradient(180deg, #fca5a5 0%, #ff453a 50%, #dc2626 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .timer-sub-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+        .timer-sub-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .timer-sub-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .timer-sub-value {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+        .timer-active .timer-sub-value { color: #93c5fd; }
+        .timer-sub-divider {
+            width: 1px;
+            height: 30px;
+            background: var(--border);
+        }
+        .timer-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.6s;
+            z-index: 0;
+        }
+        .timer-active .timer-glow {
+            opacity: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(37,99,235,0.08) 0%, transparent 60%);
+            animation: timerPulse 3s ease-in-out infinite;
+        }
+        .timer-done .timer-glow {
+            opacity: 1;
+            background: radial-gradient(ellipse at 50% 30%, rgba(48,209,88,0.06) 0%, transparent 60%);
+        }
+        @keyframes timerPulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+        @keyframes timerTick {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        .timer-tick .timer-display {
+            animation: timerTick 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+        <defs>
+            <symbol id="ico-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M4 20v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></symbol>
+            <symbol id="ico-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
+            <symbol id="ico-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></symbol>
+            <symbol id="ico-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></symbol>
+            <symbol id="ico-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></symbol>
+            <symbol id="ico-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.27 6.96 9 5.04m8.73-5.04-9 5.04M12 22.08V12"/></symbol>
+            <symbol id="ico-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+            <symbol id="ico-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+            <symbol id="ico-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+            <symbol id="ico-dice" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8h.01M16 8h.01M8 16h.01M16 16h.01"/></symbol>
+            <symbol id="ico-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></symbol>
+            <symbol id="ico-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
+            <symbol id="ico-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+            <symbol id="ico-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+            <symbol id="ico-fire" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+            <symbol id="ico-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+            <symbol id="ico-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+            <symbol id="ico-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+            <symbol id="ico-timer" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+            <symbol id="ico-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+            <symbol id="ico-cross" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+            <symbol id="ico-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></symbol>
+            <symbol id="ico-pencil" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+            <symbol id="ico-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+            <symbol id="ico-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></symbol>
+        </defs>
+    </svg>
+    <!-- Background mesh -->
+    <div class="bg-mesh">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+        <div class="bg-orb bg-orb-4"></div>
+        <div class="bg-grid"></div>
+        <div class="bg-vignette"></div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- Confirm dialog -->
+    <div class="modal" id="custom-dialog">
+        <div class="modal-box liquid-glass">
+            <h2 id="dialog-title" class="modal-title">Подтверждение</h2>
+            <p id="dialog-message" style="color:var(--text-secondary); text-align:center; margin-bottom:24px; font-size:14px; line-height:1.5;">Вы уверены?</p>
+            <div class="flex gap-12">
+                <button class="btn liquid-glass-btn" id="dialog-cancel" style="flex:1;"><span>Отмена</span></button>
+                <button class="btn btn-primary" id="dialog-confirm" style="flex:1;">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                    <h1>WebFlow Sender</h1>
+                <span>by Ew1lexa</span>
+                </div>
+            <div class="sidebar-nav">
+                <div class="nav-item liquid-glass-nav active" data-page="accounts"><span class="icon"><svg class="ico"><use href="#ico-user"/></svg></span> Аккаунты</div>
+                <div class="nav-item liquid-glass-nav" data-page="template"><span class="icon"><svg class="ico"><use href="#ico-mail"/></svg></span> Шаблон</div>
+                <div class="nav-item liquid-glass-nav" data-page="settings"><span class="icon"><svg class="ico"><use href="#ico-gear"/></svg></span> Настройки</div>
+                <div class="nav-item liquid-glass-nav" data-page="send"><span class="icon"><svg class="ico"><use href="#ico-send"/></svg></span> Отправка</div>
+                <div class="nav-item liquid-glass-nav" data-page="analytics"><span class="icon"><svg class="ico"><use href="#ico-chart"/></svg></span> Аналитика</div>
+            </div>
+            <div class="sidebar-footer">
+                <div id="sidebar-status" style="display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:12px; font-weight:600;">
+                    <span id="status-dot" style="width:8px; height:8px; border-radius:50%; background:#48484a; flex-shrink:0;"></span>
+                    <span id="status-text" style="color:var(--text-secondary);">Готов</span>
+                </div>
+                <a href="https://t.me/Ew1lexa" target="_blank">Telegram: @Ew1lexa</a>
+            </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main">
+            <div class="content">
+
+                <!-- ACCOUNTS -->
+                <div class="page active" id="page-accounts">
+                    <div class="flex-between mb-24">
+                        <div>
+                            <h2 class="page-title">Аккаунты</h2>
+                            <p class="page-desc" style="margin-bottom:0;">Управление WebFlow-аккаунтами</p>
+                        </div>
+                        <div id="active-badge" style="display:none;" class="badge">● <span id="active-badge-name"></span></div>
+                    </div>
+                    <div class="stat-grid">
+                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Аккаунтов</div><div class="stat-num" id="stat-total">0</div></div>
+                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Писем отправлено</div><div class="stat-num text-primary" id="stat-sent">0</div></div>
+                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Система</div><div class="stat-num text-success" style="font-size:20px;">Онлайн</div></div>
+                        </div>
+                    <div class="flex-between mb-16">
+                        <button class="btn btn-primary" onclick="openCreateAccountModal()">+ Добавить аккаунт</button>
+                        <div class="flex gap-8">
+                            <button class="btn btn-accent" onclick="exportAllData()"><svg class="ico" style="margin-right:6px;"><use href="#ico-box"/></svg>Экспорт</button>
+                            <label class="btn btn-accent" style="display:inline-flex;"><svg class="ico" style="margin-right:6px;"><use href="#ico-download"/></svg>Импорт<input type="file" accept=".json" style="display:none;" onchange="importAllData(event)"></label>
+                            <button class="btn btn-danger" onclick="deleteAllAccounts()">Очистить</button>
+                        </div>
+                    </div>
+                    <div class="accounts-grid" id="accounts-list"></div>
+                </div>
+
+                <!-- TEMPLATE -->
+                <div class="page" id="page-template">
+                    <h2 class="page-title">Шаблон письма</h2>
+                    <p class="page-desc">Выберите готовый или создайте свой</p>
+
+                    <div class="card mb-16">
+                        <div class="card-title">Готовые шаблоны</div>
+                        <div class="tpl-grid" id="template-picker">
+                            <div class="text-dim" style="grid-column:1/-1; text-align:center; padding:20px;">Загрузка...</div>
+                    </div>
+                    </div>
+
+                    <div class="card mb-16" id="template-account-info" style="display:none; border-color:var(--primary);">
+                        <div class="tag">Редактируется для</div>
+                        <div style="font-size:16px; font-weight:700; margin-top:4px;" id="template-account-email"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="form-group">
+                            <label class="form-label">Имя отправителя</label>
+                            <input type="text" id="template-sender-name" placeholder="Poshmark, Depop, eBay..." autocomplete="off">
+                            <div class="text-dim" style="font-size:11px; margin-top:4px;">Это имя будет отображаться как отправитель письма (From: Poshmark)</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Тема письма</label>
+                            <input type="text" id="template-subject" placeholder="[Your item sold!|Congrats on your sale!]" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <div class="flex-between" style="margin-bottom:8px;">
+                                <label class="form-label" style="margin-bottom:0;">HTML содержимое</label>
+                                <div class="flex gap-8">
+                                    <button class="btn btn-ghost template-editor-tab active" data-mode="code" onclick="toggleTemplateEditor('code')" style="padding:5px 12px; font-size:11px;"><svg class="ico" style="margin-right:4px;"><use href="#ico-code"/></svg>Код</button>
+                                    <button class="btn btn-ghost template-editor-tab" data-mode="preview" onclick="toggleTemplateEditor('preview')" style="padding:5px 12px; font-size:11px;"><svg class="ico" style="margin-right:4px;"><use href="#ico-eye"/></svg>Превью</button>
+                                </div>
+                            </div>
+                            <textarea id="template-content" placeholder="HTML-код письма..." style="min-height:350px; font-family:'SF Mono','Fira Code',monospace; font-size:12px;"></textarea>
+                            <iframe id="template-live-preview" style="display:none; width:100%; min-height:350px; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff;" sandbox="allow-same-origin"></iframe>
+                    </div>
+                        <div class="card" style="background:rgba(37,99,235,0.04); border-color:rgba(59,130,246,0.12); padding:16px 20px; margin-bottom:16px;">
+                            <div class="flex-between" style="margin-bottom:12px;">
+                                <span class="tag">Переменные шаблона</span>
+                                <button class="btn btn-ghost" onclick="randomizeAndPreview()" style="padding:5px 12px; font-size:11px; gap:4px;"><svg class="ico" style="margin-right:4px;"><use href="#ico-dice"/></svg>Рандом-превью</button>
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+                                <span class="code">{email}</span>
+                                <span class="code">{username}</span>
+                                <span class="code">{first_name}</span>
+                                <span class="code">{last_name}</span>
+                                <span class="code">{order_id}</span>
+                                <span class="code">{date}</span>
+                                <span class="code">{time}</span>
+                                <span class="code">{random_price}</span>
+                                <span class="code">{tracking_number}</span>
+                                <span class="code">{item_name}</span>
+                                <span class="code" style="background:rgba(48,209,88,0.12) !important; color:#30d158 !important; border:1px solid rgba(48,209,88,0.2);">{redirect}</span>
+                            </div>
+                            <div style="font-size:11px; color:var(--text-tertiary); line-height:1.6;">
+                                <svg class="ico" style="width:14px;height:14px;color:#60a5fa;vertical-align:-0.2em;"><use href="#ico-info"/></svg>
+                                Вставь эти переменные в HTML-шаблон. При отправке все подставятся <b>рандомно</b> для каждого батча.<br>
+                                <span style="color:#30d158;">{redirect}</span> — твоя постоянная ссылка (задаётся на вкладке Отправка).
+                            </div>
+                        </div>
+                        <!-- Hidden inputs for preview compatibility -->
+                        <div style="display:none;">
+                            <input id="tpl-var-email" value="user@example.com">
+                            <input id="tpl-var-username" value="JohnDoe">
+                            <input id="tpl-var-order-id" value="78432156">
+                            <input id="tpl-var-redirect" value="https://example.com/confirm">
+                            <input id="tpl-var-date" value="Feb 09, 2026">
+                            <input id="tpl-var-time" value="14:32">
+                            <input id="tpl-var-random-price" value="$49.99">
+                            <input id="tpl-var-tracking-number" value="1Z999AA10123456784">
+                            <input id="tpl-var-item-name" value="Vintage Nike Windbreaker">
+                        </div>
+                        <div class="flex gap-8" style="flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="setTemplateToCurrentAccount()"><svg class="ico" style="margin-right:6px;"><use href="#ico-save"/></svg>Сохранить</button>
+                            <button class="btn btn-ghost" onclick="setTemplateToAllAccounts()">Применить ко всем</button>
+                            <button class="btn btn-accent" onclick="randomizeAndPreview()"><svg class="ico" style="margin-right:6px;"><use href="#ico-dice"/></svg>Рандом-превью</button>
+                            <button class="btn btn-danger" onclick="clearTemplate()"><svg class="ico" style="margin-right:6px;"><use href="#ico-trash"/></svg>Очистить</button>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- SETTINGS -->
+                <div class="page" id="page-settings">
+                    <h2 class="page-title">Настройки</h2>
+                    <p class="page-desc">Конфигурация движка рассылки</p>
+
+                    <div class="grid-2 mb-16" style="overflow:visible;">
+                        <div class="card" style="overflow:visible; position:relative; z-index:10;">
+                            <div class="card-title">Формат Order ID</div>
+                                    <input type="hidden" id="setting-order-type" value="digits">
+                            <div class="custom-select" id="select-order-type">
+                                <div class="custom-select-trigger" onclick="toggleSelect('select-order-type')">
+                                    <span class="select-label">Только цифры</span>
+                                    <svg class="arrow" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                </div>
+                                <div class="custom-select-dropdown">
+                                    <div class="custom-select-option selected" data-value="digits" onclick="pickOption('select-order-type','digits','Только цифры')">Только цифры</div>
+                                    <div class="custom-select-option" data-value="letters" onclick="pickOption('select-order-type','letters','Только буквы')">Только буквы</div>
+                                    <div class="custom-select-option" data-value="mixed" onclick="pickOption('select-order-type','mixed','Смешанный')">Смешанный</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Задержка анти-спама</div>
+                            <div style="display:inline-block; font-size:10px; color:#93c5fd; background:rgba(37,99,235,0.12); border:1px solid rgba(59,130,246,0.2); padding:4px 12px; border-radius:100px; margin-bottom:12px;">Мин 2–3 сек, макс 5–8 сек</div>
+                            <div class="grid-2">
+                                <div>
+                                    <div class="tag" style="margin-bottom:8px;">Мин (сек)</div>
+                                    <div class="stepper">
+                                        <button class="stepper-btn" onclick="stepValue('setting-delay-min',-1,1,300)">−</button>
+                                        <input type="number" id="setting-delay-min" value="2" min="1" max="300" autocomplete="off">
+                                        <button class="stepper-btn" onclick="stepValue('setting-delay-min',1,1,300)">+</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="tag" style="margin-bottom:8px;">Макс (сек)</div>
+                                    <div class="stepper">
+                                        <button class="stepper-btn" onclick="stepValue('setting-delay-max',-1,1,300)">−</button>
+                                        <input type="number" id="setting-delay-max" value="5" min="1" max="300" autocomplete="off">
+                                        <button class="stepper-btn" onclick="stepValue('setting-delay-max',1,1,300)">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-16" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div class="card-title" style="margin-bottom:6px;">Уведомления</div>
+                            <div style="font-size:11px; color:var(--text-tertiary);">Звук при завершении рассылки, ошибках и остановке</div>
+                        </div>
+                        <button class="btn btn-accent" onclick="toggleSoundNotifications()" id="btn-notifications" style="flex-shrink:0;"><svg class="ico" style="margin-right:6px;"><use href="#ico-bell"/></svg><span id="btn-notifications-text">Включены</span></button>
+                    </div>
+
+                    <div class="card">
+                        <div class="flex-between mb-16">
+                            <div class="card-title" style="margin-bottom:0;">Двигатель (config.json)</div>
+                            <button class="btn btn-primary" onclick="saveAllSettings()"><svg class="ico" style="margin-right:6px;"><use href="#ico-save"/></svg>Сохранить всё</button>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group"><label class="form-label"><svg class="ico" style="margin-right:4px; vertical-align:-0.35em;"><use href="#ico-zap"/></svg>Session ID</label><input type="text" id="engine-session-id" placeholder="x-session-id из DevTools" autocomplete="off"></div>
+                            <div class="form-group"><label class="form-label"><svg class="ico" style="margin-right:4px; vertical-align:-0.35em;"><use href="#ico-zap"/></svg>XSRF Token</label><input type="text" id="engine-xsrf-token" placeholder="x-xsrf-token из DevTools" autocomplete="off"></div>
+                            <div class="form-group" style="grid-column:1/-1;"><label class="form-label"><svg class="ico" style="margin-right:4px; vertical-align:-0.35em;"><use href="#ico-zap"/></svg>Designer Session Cookie <span style="font-weight:500; text-transform:none; color:#93c5fd; background:rgba(37,99,235,0.12); border:1px solid rgba(59,130,246,0.2); padding:2px 8px; border-radius:100px; font-size:9px; margin-left:4px;">Cookie → wfdesignersession</span></label><input type="text" id="engine-designer-session" placeholder="wfdesignersession из Cookie (DevTools → Application → Cookies)" autocomplete="off" style="font-size:11px;"></div>
+                            <div class="form-group"><label class="form-label">Site ID</label><input type="text" id="engine-site-id" autocomplete="off"></div>
+                            <div class="form-group"><label class="form-label">Element ID</label><input type="text" id="engine-element-id" autocomplete="off"></div>
+                            <div class="form-group"><label class="form-label">Page ID</label><input type="text" id="engine-page-id" autocomplete="off"></div>
+                            <div class="form-group"><label class="form-label">Имя сайта</label><input type="text" id="engine-site-name" autocomplete="off"></div>
+                            <div class="form-group"><label class="form-label">Домен</label><input type="text" id="engine-domain" autocomplete="off"></div>
+                            <div class="form-group"><label class="form-label">Имя отправителя</label><input type="text" id="engine-sender-name" autocomplete="off"></div>
+                            <div class="form-group">
+                                <label class="form-label">Размер батча <span style="font-weight:500; text-transform:none; color:#93c5fd; background:rgba(37,99,235,0.12); border:1px solid rgba(59,130,246,0.2); padding:2px 8px; border-radius:100px; font-size:9px; margin-left:4px;">5–10</span></label>
+                                <div class="stepper">
+                                    <button class="stepper-btn" onclick="stepValue('engine-batch-size',-1,1,50)">−</button>
+                                    <input type="number" id="engine-batch-size" value="5" min="1" max="50" autocomplete="off">
+                                    <button class="stepper-btn" onclick="stepValue('engine-batch-size',1,1,50)">+</button>
+                            </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Задержка батчей (сек) <span style="font-weight:500; text-transform:none; color:#93c5fd; background:rgba(37,99,235,0.12); border:1px solid rgba(59,130,246,0.2); padding:2px 8px; border-radius:100px; font-size:9px; margin-left:4px;">3–5</span></label>
+                                <div class="stepper">
+                                    <button class="stepper-btn" onclick="stepValue('engine-batch-delay',-0.5,0,60)">−</button>
+                                    <input type="number" id="engine-batch-delay" value="3.5" min="0" max="60" step="0.5" autocomplete="off">
+                                    <button class="stepper-btn" onclick="stepValue('engine-batch-delay',0.5,0,60)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEND -->
+                <div class="page" id="page-send">
+                    <h2 class="page-title">Отправка</h2>
+                    <p class="page-desc">Запуск и мониторинг рассылки</p>
+
+                    <div class="card mb-16" id="send-account-info" style="display:none; border-color:var(--primary);">
+                        <div class="flex-between">
+                            <div>
+                                <div class="tag">Активный аккаунт</div>
+                                <div style="font-size:16px; font-weight:700; margin-top:4px;" id="send-account-name">—</div>
+                    </div>
+                            <svg class="ico" style="width:24px; height:24px; opacity:0.3;"><use href="#ico-globe"/></svg>
+                        </div>
+                    </div>
+
+                    <div class="grid-2" style="align-items:start;">
+                        <div>
+                            <div class="card">
+                                <div class="card-title">Режим</div>
+                                <div class="mode-group">
+                                    <button class="mode-opt liquid-glass-btn active" data-mode="1" onclick="selectMode(this)">
+                                        <span><div class="mode-title"><svg class="ico" style="margin-right:6px;"><use href="#ico-zap"/></svg>Режим 1</div>
+                                        <div class="mode-sub">Быстрая отправка</div></span>
+                                    </button>
+                                    <button class="mode-opt liquid-glass-btn" data-mode="2" onclick="selectMode(this)">
+                                        <span><div class="mode-title"><svg class="ico" style="margin-right:6px;"><use href="#ico-fire"/></svg>Режим 2</div>
+                                        <div class="mode-sub">Inbox Warming</div></span>
+                                    </button>
+                            </div>
+                                <input type="hidden" id="send-mode" value="1">
+                            </div>
+
+                            <div class="card">
+                                <div class="card-title">Получатели</div>
+                                <div id="drop-zone" style="position:relative;">
+                                    <textarea id="emails-input" placeholder="email@example.com&#10;another@mail.com&#10;&#10;Или перетащите .txt файл сюда..." style="min-height:200px;"></textarea>
+                                    <div id="drop-overlay" style="display:none; position:absolute; inset:0; background:rgba(59,130,246,0.12); border:2px dashed var(--primary); border-radius:var(--radius-sm); z-index:5; pointer-events:none; align-items:center; justify-content:center;">
+                                        <div style="text-align:center; color:var(--primary); font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px;"><svg class="ico" style="width:20px;height:20px;"><use href="#ico-download"/></svg>Отпустите файл здесь</div>
+                                    </div>
+                                </div>
+                                <div class="flex-between" style="margin-top:12px;">
+                                    <span class="tag">Найдено: <span id="emails-count" style="color:var(--text);">0</span></span>
+                                    <label class="btn btn-ghost" style="padding:6px 12px; font-size:11px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"><svg class="ico" style="width:16px;height:16px;"><use href="#ico-folder"/></svg>.txt<input type="file" accept=".txt" style="display:none;" onchange="loadEmailsFromFile(event)"></label>
+                                </div>
+                                </div>
+
+                            <!-- TIMER BLOCK -->
+                            <div class="card timer-block liquid-glass" id="timer-card">
+                                <div class="timer-inner">
+                                    <div class="timer-header">
+                                        <div class="timer-icon-wrap">
+                                            <span class="timer-icon" id="timer-icon"><svg class="ico"><use href="#ico-timer"/></svg></span>
+                                        </div>
+                                        <div class="timer-label" id="timer-label">Время отправки</div>
+                                    </div>
+                                    <div class="timer-display" id="timer-display">00:00:00</div>
+                                    <div class="timer-sub-row">
+                                        <div class="timer-sub-item">
+                                            <span class="timer-sub-label">Скорость</span>
+                                            <span class="timer-sub-value" id="timer-speed">—</span>
+                                        </div>
+                                        <div class="timer-sub-divider"></div>
+                                        <div class="timer-sub-item">
+                                            <span class="timer-sub-label">Осталось</span>
+                                            <span class="timer-sub-value" id="timer-eta">—</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="timer-glow" id="timer-glow"></div>
+                            </div>
+
+                            <div class="card">
+                                <div class="flex-between"><span class="tag">Прогресс</span><span id="progress-percent" style="font-weight:800; color:var(--primary);">0%</span></div>
+                                <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+                                <div class="flex-between" style="font-size:13px;"><span id="progress-text" class="text-dim">0 / 0</span></div>
+                                <div class="grid-2" style="margin-top:12px;">
+                                    <div style="text-align:center; padding:8px; background:rgba(48,209,88,0.06); border-radius:var(--radius-sm); border:1px solid rgba(48,209,88,0.1);">
+                                        <div class="tag" style="font-size:9px;">Успех</div>
+                                        <div id="send-success" style="font-weight:800; color:var(--success);">0</div>
+                                    </div>
+                                    <div style="text-align:center; padding:8px; background:rgba(255,69,58,0.06); border-radius:var(--radius-sm); border:1px solid rgba(255,69,58,0.1);">
+                                        <div class="tag" style="font-size:9px;">Ошибки</div>
+                                        <div id="send-errors" style="font-weight:800; color:var(--danger);">0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card" style="border-color:rgba(59,130,246,0.2); background:rgba(37,99,235,0.04);">
+                                <div class="card-title" style="margin-bottom:10px;"><svg class="ico" style="margin-right:6px;"><use href="#ico-link"/></svg>Твоя ссылка</div>
+                                <input type="text" id="send-redirect-url" placeholder="https://your-link.com/page" autocomplete="off" style="font-size:13px;">
+                                <div style="margin-top:8px; font-size:10px; color:var(--text-tertiary);">
+                                    Вставь ссылку → нажми Запустить. Всё остальное (имя, цена, трекинг, товар) — рандом автоматически.
+                                </div>
+                            </div>
+
+                            <div class="flex gap-8">
+                                <button class="btn btn-primary btn-lg" style="flex:1;" onclick="startSending()" id="btn-start">Запустить</button>
+                                <button class="btn btn-danger btn-lg" style="flex:1; display:none;" onclick="stopSending()" id="btn-stop">Остановить</button>
+                        </div>
+                        </div>
+
+                        <div>
+                        <div class="card" style="height:480px; display:flex; flex-direction:column;">
+                            <div class="flex-between" style="margin-bottom:12px;"><div class="card-title" style="margin-bottom:0;">Логи</div><span style="font-size:10px; color:var(--text-tertiary);">макс. 100 записей</span></div>
+                            <div class="log-box" id="logs-container">Логи появятся после запуска...</div>
+                        </div>
+
+                        <div class="card" style="padding:16px;">
+                            <div class="card-title" style="margin-bottom:12px;">Справочник ошибок</div>
+                            <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                                <thead>
+                                    <tr style="border-bottom:1px solid var(--border);">
+                                        <th style="text-align:left; padding:6px 8px; color:var(--text-tertiary); font-weight:600;">Код</th>
+                                        <th style="text-align:left; padding:6px 8px; color:var(--text-tertiary); font-weight:600;">Описание</th>
+                                    </tr>
+                                </thead>
+                                <tbody style="color:var(--text-secondary);">
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">#FORM_UPD</span></td>
+                                        <td style="padding:5px 8px;">Ошибка обновления формы — невалидный session/xsrf</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">PUB_FAIL</span></td>
+                                        <td style="padding:5px 8px;">Публикация не удалась — проблема с API WebFlow</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">PUB_TIME</span></td>
+                                        <td style="padding:5px 8px;">Таймаут публикации — сервер не ответил за 60с</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">TRIG_ERR</span></td>
+                                        <td style="padding:5px 8px;">Форма не отправлена — домен/page_id неверны</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">NET_ERR</span></td>
+                                        <td style="padding:5px 8px;">Ошибка сети — прокси/соединение недоступно</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">AUTH_401</span></td>
+                                        <td style="padding:5px 8px;">Токен истёк — обновите session_id и xsrf_token</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">RATE_429</span></td>
+                                        <td style="padding:5px 8px;">Rate limit — auto-retry 3 попытки (15с→30с→60с)</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">STOP_USR</span></td>
+                                        <td style="padding:5px 8px;">Остановлено пользователем</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        </div>
+                </div>
+                </div>
+
+                <!-- ANALYTICS -->
+                <div class="page" id="page-analytics">
+                    <h2 class="page-title">Аналитика</h2>
+                    <p class="page-desc">Статистика рассылок и логи</p>
+
+                    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
+                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Всего отправлено</div><div class="stat-num text-primary" id="analytics-total">0</div></div>
+                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Успешных</div><div class="stat-num text-success" id="analytics-success">0</div></div>
+                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Ошибок</div><div class="stat-num text-danger" id="analytics-failed">0</div></div>
+                        <div class="stat-box liquid-glass-stat"><div class="stat-label">% Успеха</div><div class="stat-num" id="analytics-rate" style="color:#60a5fa;">0%</div></div>
+                    </div>
+
+                    <div class="card mb-16">
+                        <div class="card-title">Отправки за последние 14 дней</div>
+                        <div id="analytics-chart" style="display:flex; align-items:flex-end; gap:4px; height:160px; padding-top:16px;"></div>
+                    </div>
+
+                    <div class="grid-2 mb-16">
+                        <div class="card">
+                            <div class="card-title">Топ аккаунтов</div>
+                            <div id="analytics-top-accounts" style="font-size:13px; color:var(--text-secondary);">Нет данных</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Последние рассылки</div>
+                            <div id="analytics-recent" style="font-size:13px; color:var(--text-secondary);">Нет данных</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="flex-between mb-16">
+                            <div class="card-title" style="margin-bottom:0;">Логи</div>
+                            <div class="custom-select custom-select-logs" id="select-log-date" style="width:auto; min-width:180px;">
+                                <div class="custom-select-trigger" onclick="toggleSelect('select-log-date')">
+                                    <span class="select-label">Выберите дату...</span>
+                                    <svg class="arrow" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                </div>
+                                <div class="custom-select-dropdown" id="log-date-dropdown">
+                                    <div class="custom-select-option selected" data-value="" onclick="pickLogDate(this.dataset.value)">Выберите дату...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="log-content" class="log-box" style="min-height:200px; max-height:400px;">Выберите дату для просмотра логов...</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="modal-create-account">
+        <div class="modal-box liquid-glass">
+            <h2 class="modal-title">Добавить аккаунт</h2>
+            <div class="form-group"><label class="form-label">Название</label><input type="text" id="create-app-name" placeholder="Мой Аккаунт" autocomplete="off"></div>
+            <div class="form-group"><label class="form-label">Session ID</label><input type="text" id="create-session-id" placeholder="Session ID из WebFlow" autocomplete="off"></div>
+            <div class="form-group"><label class="form-label">XSRF Token</label><input type="text" id="create-xsrf-token" placeholder="XSRF Token" autocomplete="off"></div>
+            <div class="flex gap-12">
+                <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('modal-create-account')">Отмена</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="saveNewAccount()">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-rename">
+        <div class="modal-box liquid-glass">
+            <h2 class="modal-title">Переименовать</h2>
+            <input type="hidden" id="rename-filename">
+            <div class="form-group"><label class="form-label">Новое имя</label><input type="text" id="rename-input" autocomplete="off"></div>
+            <div class="flex gap-12">
+                <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('modal-rename')">Отмена</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="confirmRename()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-proxy">
+        <div class="modal-box liquid-glass">
+            <h2 class="modal-title">Прокси</h2>
+            <input type="hidden" id="proxy-filename">
+            <div class="form-group"><label class="form-label">Proxy URL</label><input type="text" id="proxy-input" placeholder="host:port:user:pass или socks5://user:pass@host:port" autocomplete="off"></div>
+            <div id="proxy-test-result" style="display:none; font-size:13px; padding:10px 12px; border-radius:var(--radius-sm); margin-bottom:12px;"></div>
+            <div class="flex gap-12" style="flex-wrap:wrap;">
+                <button class="btn btn-ghost" onclick="testProxy()" type="button">Проверить</button>
+                <div style="flex:1; min-width:0;"></div>
+                <button class="btn btn-ghost" style="flex:0 1 auto;" onclick="closeModal('modal-proxy')">Отмена</button>
+                <button class="btn btn-primary" style="flex:0 1 auto;" onclick="confirmProxy()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-preview">
+        <div class="modal-box-wide liquid-glass">
+            <div class="flex-between" style="margin-bottom:16px;">
+                <h2 style="font-size:18px; font-weight:800;">Предпросмотр</h2>
+                <button class="btn btn-ghost" onclick="closeModal('modal-preview')">✕</button>
+            </div>
+            <iframe id="preview-frame" style="flex:1; width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff;" sandbox="allow-same-origin"></iframe>
+        </div>
+    </div>
+
+    <!-- Custom cursor -->
+    <div class="cursor-glow" id="cursor-glow"></div>
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-ring" id="cursor-ring"></div>
+
+    <script src="/static/script.js?v={{ range(100000) | random }}"></script>
+    <script>
+        function stepValue(id, delta, min, max) {
+            const input = document.getElementById(id);
+            let val = parseFloat(input.value) || 0;
+            val = Math.round((val + delta) * 10) / 10;
+            input.value = Math.max(min, Math.min(max, val));
+        }
+
+        // Custom select
+        function toggleSelect(id) {
+            const el = document.getElementById(id);
+            const trigger = el.querySelector('.custom-select-trigger');
+            const dropdown = el.querySelector('.custom-select-dropdown');
+            const isOpen = dropdown.classList.contains('open');
+            // close all
+            document.querySelectorAll('.custom-select-dropdown').forEach(d => d.classList.remove('open'));
+            document.querySelectorAll('.custom-select-trigger').forEach(t => t.classList.remove('open'));
+            if (!isOpen) {
+                dropdown.classList.add('open');
+                trigger.classList.add('open');
+            }
+        }
+        function pickOption(selectId, value, label) {
+            const el = document.getElementById(selectId);
+            el.querySelector('.select-label').textContent = label;
+            el.querySelector('.custom-select-dropdown').classList.remove('open');
+            el.querySelector('.custom-select-trigger').classList.remove('open');
+            el.querySelectorAll('.custom-select-option').forEach(o => o.classList.toggle('selected', o.dataset.value === value));
+            // set hidden input
+            const inputId = selectId.replace('select-', 'setting-');
+            const input = document.getElementById(inputId);
+            if (input) input.value = value;
+        }
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.custom-select')) {
+                document.querySelectorAll('.custom-select-dropdown').forEach(d => d.classList.remove('open'));
+                document.querySelectorAll('.custom-select-trigger').forEach(t => t.classList.remove('open'));
+            }
+        });
+
+        // Custom cursor
+        (function() {
+            const glow = document.getElementById('cursor-glow');
+            const dot = document.getElementById('cursor-dot');
+            const ring = document.getElementById('cursor-ring');
+            let mx = 0, my = 0;
+            let rx = 0, ry = 0;
+
+            document.addEventListener('mousemove', e => {
+                mx = e.clientX; my = e.clientY;
+                dot.style.left = mx + 'px';
+                dot.style.top = my + 'px';
+                glow.style.left = mx + 'px';
+                glow.style.top = my + 'px';
+            });
+
+            function animateRing() {
+                rx += (mx - rx) * 0.15;
+                ry += (my - ry) * 0.15;
+                ring.style.left = rx + 'px';
+                ring.style.top = ry + 'px';
+                requestAnimationFrame(animateRing);
+            }
+            animateRing();
+
+            const hoverTargets = 'a, button, .btn, .nav-item, .account-card, .tpl-card, .mode-opt, input, textarea, select, label[style*="cursor"]';
+            document.addEventListener('mouseover', e => {
+                if (e.target.closest(hoverTargets)) {
+                    dot.classList.add('active');
+                    ring.classList.add('active');
+                }
+            });
+            document.addEventListener('mouseout', e => {
+                if (e.target.closest(hoverTargets)) {
+                    dot.classList.remove('active');
+                    ring.classList.remove('active');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

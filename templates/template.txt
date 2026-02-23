@@ -1,0 +1,5 @@
+This is a default template.
+Order ID: {order_id}
+Username: {username}
+Email: {email}
+Redirect: {redirect}

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[Your sale is confirmed|StockX: Item Sold|Sale Complete — Ship Now]</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">
+
+  <div style="display:none; max-height:0; overflow:hidden; mso-hide:all;">
+    {username}, [your StockX sale has been confirmed|your item sold on StockX|congratulations on your StockX sale]. [Ship within 2 business days|Send your item to StockX for authentication].
+  </div>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f4f4f4;">
+    <tr>
+      <td align="center" style="padding:24px 16px;">
+
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:580px; background-color:#ffffff; overflow:hidden;">
+
+          <!-- Black header -->
+          <tr>
+            <td style="background-color:#1a1a1a; padding:22px 36px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td>
+                    <span style="font-size:20px; font-weight:800; color:#ffffff; letter-spacing:1px; text-transform:uppercase;">StockX</span>
+                  </td>
+                  <td style="text-align:right;">
+                    <span style="font-size:11px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px;">[Seller|Sale|Order]</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Green status bar -->
+          <tr>
+            <td style="background-color:#0d8044; padding:14px 36px; text-align:center;">
+              <span style="color:#fff; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">[&#10003; Sale Confirmed|&#10003; Item Sold|&#10003; Order Matched]</span>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding:32px 36px 16px;">
+              <h1 style="margin:0 0 12px; font-size:22px; font-weight:700; color:#1a1a1a; line-height:1.3;">
+                [Your item has been sold.|Congrats — sale confirmed!|Your ask was matched!|You made a sale on StockX.]
+              </h1>
+              <p style="margin:0; font-size:15px; color:#666; line-height:1.6;">
+                [Hey|Hi] <strong style="color:#1a1a1a;">{username}</strong>, [a buyer matched your asking price.|your listing has been purchased.|someone accepted your ask.]
+              </p>
+            </td>
+          </tr>
+
+          <!-- Order details -->
+          <tr>
+            <td style="padding:16px 36px 28px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #e5e5e5;">
+                <tr>
+                  <td style="padding:14px 16px; background:#fafafa; border-bottom:1px solid #eee;">
+                    <span style="font-size:10px; color:#999; text-transform:uppercase; letter-spacing:1px; font-weight:700;">[Order Number|Sale ID|Transaction]</span>
+                  </td>
+                  <td style="padding:14px 16px; background:#fafafa; border-bottom:1px solid #eee; text-align:right;">
+                    <span style="font-size:15px; font-weight:700; color:#1a1a1a; font-family:'Courier New', monospace;">{order_id}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 16px; border-bottom:1px solid #eee;">
+                    <span style="font-size:10px; color:#999; text-transform:uppercase; letter-spacing:1px; font-weight:700;">Status</span>
+                  </td>
+                  <td style="padding:14px 16px; border-bottom:1px solid #eee; text-align:right;">
+                    <span style="color:#0d8044; font-size:13px; font-weight:700;">[Confirmed|Awaiting Shipment|Ready to Ship]</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding:14px 16px;">
+                    <span style="font-size:10px; color:#999; text-transform:uppercase; letter-spacing:1px; font-weight:700;">[Deadline|Ship by|Required action]</span><br>
+                    <span style="font-size:14px; color:#333; margin-top:4px; display:inline-block;">[Ship to StockX within 2 business days|You must ship within 2 business days|Send your item for authentication within 2 days]</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Info -->
+          <tr>
+            <td style="padding:0 36px 28px;">
+              <p style="margin:0; font-size:14px; color:#666; line-height:1.6;">
+                [Ship your item to StockX for verification. Once authenticated, the buyer will receive the item and your payout will be processed.|Your item needs to be shipped to our authentication center. After verification, your payout will be released.|Please send your item for authentication. Payout is processed after successful verification.]
+              </p>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding:0 36px 16px; text-align:center;">
+              <a href="{redirect}" target="_blank" style="display:block; padding:16px; background-color:#1a1a1a; color:#fff; font-size:15px; font-weight:700; text-decoration:none; text-align:center; text-transform:uppercase; letter-spacing:1px; line-height:1.2;">
+                [View Sale &amp; Print Label|Ship Now|Manage This Sale|Get Shipping Label]
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 36px 36px; text-align:center;">
+              <a href="{redirect}" style="font-size:12px; color:#666; text-decoration:underline;">[View order on StockX|Open in seller portal|Track this order]</a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#1a1a1a; padding:28px 36px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td style="text-align:center; padding-bottom:12px;">
+                    <span style="font-size:16px; font-weight:800; color:#fff; letter-spacing:1px; text-transform:uppercase;">StockX</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="text-align:center; font-size:11px; color:rgba(255,255,255,0.4); line-height:1.6;">
+                    [Sent to|This email was sent to] {email}<br>
+                    StockX LLC &middot; 1046 Woodward Ave, Detroit, MI 48226<br>
+                    <a href="#" style="color:rgba(255,255,255,0.4); text-decoration:underline;">Unsubscribe</a> &middot; <a href="#" style="color:rgba(255,255,255,0.4); text-decoration:underline;">Privacy</a> &middot; <a href="#" style="color:rgba(255,255,255,0.4); text-decoration:underline;">Help</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
