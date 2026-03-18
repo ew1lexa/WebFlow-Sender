@@ -92,12 +92,12 @@
                        │  REST API (JSON)
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                   Flask Backend (app.py)                      │
+│                   Flask Backend (app.py)                     │
 │                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │  Accounts    │  │  Settings    │  │  Analytics        │  │
-│  │  CRUD + Sync │  │  Load/Save   │  │  Record + Query   │  │
-│  └──────────────┘  └──────────────┘  └───────────────────┘  │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐   │
+│  │  Accounts    │  │  Settings    │  │  Analytics        │   │
+│  │  CRUD + Sync │  │  Load/Save   │  │  Record + Query   │   │
+│  └──────────────┘  └──────────────┘  └───────────────────┘   │
 │                                                              │
 │  ┌──────────────────────────────────────────────────────┐    │
 │  │  Mailing Thread (per session)                        │    │
@@ -107,7 +107,7 @@
                            │
                            ▼
 ┌──────────────────────────────────────────────────────────────┐
-│              WebflowMailer (webflow_mailer.py)                │
+│              WebflowMailer (webflow_mailer.py)               │
 │                                                              │
 │  Для каждого получателя:                                     │
 │    1. process_spintax(template)     — разрешить [a|b|c]      │
