@@ -92,12 +92,12 @@ Built with a modern dark/light themed SPA dashboard for managing accounts, templ
                        │  REST API (JSON)
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                   Flask Backend (app.py)                      │
+│                   Flask Backend (app.py)                     │
 │                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │  Accounts    │  │  Settings    │  │  Analytics        │  │
-│  │  CRUD + Sync │  │  Load/Save   │  │  Record + Query   │  │
-│  └──────────────┘  └──────────────┘  └───────────────────┘  │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐   │
+│  │  Accounts    │  │  Settings    │  │  Analytics        │   │
+│  │  CRUD + Sync │  │  Load/Save   │  │  Record + Query   │   │
+│  └──────────────┘  └──────────────┘  └───────────────────┘   │
 │                                                              │
 │  ┌──────────────────────────────────────────────────────┐    │
 │  │  Mailing Thread (per session)                        │    │
@@ -107,7 +107,7 @@ Built with a modern dark/light themed SPA dashboard for managing accounts, templ
                            │
                            ▼
 ┌──────────────────────────────────────────────────────────────┐
-│              WebflowMailer (webflow_mailer.py)                │
+│              WebflowMailer (webflow_mailer.py)               │
 │                                                              │
 │  For each recipient:                                         │
 │    1. process_spintax(template)     — resolve [a|b|c]        │
@@ -115,7 +115,7 @@ Built with a modern dark/light themed SPA dashboard for managing accounts, templ
 │    3. _substitute_variables(tmpl)   — inject {email}, etc.   │
 │    4. update_form_settings()        — POST form config       │
 │    5. publish_site()                — POST publish           │
-│    6. wait_for_publish()            — poll task status        │
+│    6. wait_for_publish()            — poll task status       │
 │    7. trigger_form_submission()     — POST form submit       │
 │    8. sleep(batch_delay)                                     │
 └──────────────────────────────────────────────────────────────┘
