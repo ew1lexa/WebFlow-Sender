@@ -11,8 +11,8 @@ accounts/*.json
 !accounts/.gitkeep
 
 # Логи и аналитика (генерируются при работе)
-logs/
-*.log
+logs/*.log
+!logs/.gitkeep
 analytics.json
 
 # Временные и служебные файлы
@@ -39,10 +39,12 @@ ENV/
 # IDE и ОС
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Опционально: раскомментируйте, если не хотите коммитить шаблоны с личными данными
 # templates/template_*.txt

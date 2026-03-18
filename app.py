@@ -3,6 +3,7 @@ import json
 import os
 import glob
 import random
+import re
 import string
 import time
 from datetime import datetime
@@ -13,6 +14,39 @@ import requests as req
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+# ============================================================================
+# AUTO-CREATE DEFAULT DATA FILES ON FIRST RUN
+# ============================================================================
+_DEFAULT_CONFIG = {
+    "site_id": "", "element_id": "", "page_id": "", "site_name": "", "domain": "",
+    "session_id": "", "xsrf_token": "", "email_sender_name": "",
+    "email_reply_tos": ["no-reply@webflow.com"],
+    "template_file": "templates/template.txt",
+    "template_main_file": "templates/template_depop.txt",
+    "template_inbox_file": "templates/template_inbox.txt",
+    "email_subject_main": "Sold! Listing closed, payment received",
+    "email_subject_inbox": "Account Notification",
+    "dual_mode_delay": 3.5, "batch_size": 5, "batch_delay": 3.5,
+    "form_name": "Email Form", "delay_min": 2, "delay_max": 5,
+    "order_id_type": "digits", "order_id_length": 8,
+    "design_host": "", "form_settings_url": "", "publish_url": "",
+    "task_status_url": "", "form_submit_url": "", "origin": "", "referer": "",
+    "source": "", "publish_target": "", "redirect_url": "",
+    "additional_headers": {"x-content-type-options": "nosniff"},
+}
+_DEFAULT_FILES: dict[str, object] = {
+    "config.json":    _DEFAULT_CONFIG,
+    "cookies.json":   [],
+    "settings.json":  {"delay_min": 2, "delay_max": 5, "order_id_length": 8, "order_id_type": "digits"},
+    "analytics.json": [],
+}
+for _fname, _default in _DEFAULT_FILES.items():
+    if not os.path.exists(_fname):
+        with open(_fname, 'w', encoding='utf-8') as _f:
+            json.dump(_default, _f, indent=4, ensure_ascii=False)
+for _dir in ('accounts', 'logs'):
+    os.makedirs(_dir, exist_ok=True)
 
 # ============================================================================
 # ДАННЫЕ ДЛЯ РАНДОМИЗАЦИИ
@@ -427,10 +461,6 @@ def run_mailing(emails, mode, account_filename):
 def index():
     return render_template('index.html')
 
-@app.route('/static/Nota.mp3')
-def serve_notification_sound():
-    return send_from_directory('.', 'Nota.mp3')
-
 @app.route('/api/accounts')
 def api_accounts():
     return jsonify(load_accounts())
@@ -767,8 +797,15 @@ def update_designer_cookie(value):
                 break
         
         if not found:
+            config_domain = ""
+            try:
+                with open('config.json', 'r', encoding='utf-8') as cf:
+                    config_domain = json.load(cf).get('design_host', '')
+            except Exception:
+                pass
+            cookie_domain = f"{config_domain}.design.webflow.com" if config_domain else "design.webflow.com"
             cookies.append({
-                "domain": "email-sender-b80b03.design.webflow.com",
+                "domain": cookie_domain,
                 "expirationDate": 1900000000,
                 "hostOnly": True,
                 "httpOnly": True,
@@ -785,6 +822,126 @@ def update_designer_cookie(value):
             json.dump(cookies, f, indent=4, ensure_ascii=False)
     except Exception as e:
         print(f"Ошибка обновления cookie: {e}")
+
+@app.route('/api/config/parse-url', methods=['POST'])
+def api_parse_url():
+    """Парсит Webflow URL → загружает HTML публичной страницы → извлекает
+    site_id, page_id, element_id и все производные URL без авторизации."""
+    import re
+    from urllib.parse import urlparse
+
+    data = request.json or {}
+    url = (data.get('url') or '').strip()
+
+    if not url:
+        return jsonify({'success': False, 'error': 'URL не указан'})
+
+    # ── Фаза 1: парсим URL ──────────────────────────────────────────────────
+    design_host = None
+    try:
+        parsed = urlparse(url if '://' in url else 'https://' + url)
+        hostname = (parsed.hostname or '').lower()
+        if hostname.endswith('.webflow.io'):
+            design_host = hostname[:-len('.webflow.io')]
+        else:
+            m = re.search(r'webflow\.com/design/([^/?#\s]+)', url)
+            if m:
+                design_host = m.group(1)
+    except Exception:
+        pass
+
+    if not design_host:
+        return jsonify({'success': False,
+                        'error': 'Не удалось распознать сайт. Используйте формат: https://your-site-xxxxx.webflow.io'})
+
+    # Пытаемся выделить site_name: {name}-{hex_hash}
+    m = re.match(r'^(.*)-([0-9a-f]{14,})$', design_host)
+    site_name = m.group(1) if m else design_host
+
+    cfg: dict = {
+        'site_name':        site_name,
+        'domain':           f'{design_host}.webflow.io',
+        'design_host':      design_host,
+        'origin':           f'https://{design_host}.design.webflow.com',
+        'referer':          f'https://{design_host}.design.webflow.com/',
+        'source':           f'https://{design_host}.webflow.io/',
+        'publish_target':   f'{design_host}.webflow.io',
+        'redirect_url':     f'https://{design_host}.webflow.io/',
+        'publish_url':      f'https://{design_host}.design.webflow.com/api/sites/{design_host}/queue-publish',
+        'task_status_url':  f'https://{design_host}.design.webflow.com/api/site/{design_host}/tasks/{{task_id}}',
+    }
+
+    fetched: list[str] = []
+    warnings: list[str] = []
+
+    # ── Фаза 2: парсим HTML опубликованного сайта (без авторизации) ────────
+    pub_url = f"https://{cfg['domain']}/"
+    try:
+        r = req.get(pub_url, timeout=15, headers={
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                          'AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/144.0.0.0 Safari/537.36',
+        })
+        if r.status_code == 200:
+            html = r.text
+
+            # data-wf-site → site_id
+            m = re.search(r'data-wf-site=["\']([a-f0-9]{20,})["\']', html)
+            if m:
+                site_id = m.group(1)
+                cfg['site_id'] = site_id
+                cfg['form_submit_url'] = f'https://webflow.com/api/v1/form/{site_id}'
+                fetched.append('site_id')
+
+            # data-wf-page → page_id
+            m = re.search(r'data-wf-page=["\']([a-f0-9]{20,})["\']', html)
+            if m:
+                cfg['page_id'] = m.group(1)
+                fetched.append('page_id')
+
+            # <form ... data-wf-element-id="..."> → element_id
+            m = re.search(
+                r'<form[^>]+data-wf-element-id=["\']([a-f0-9-]{20,36})["\']',
+                html, re.I,
+            )
+            if m:
+                el_id = m.group(1)
+                cfg['element_id'] = el_id
+                cfg['form_settings_url'] = (
+                    f'https://{design_host}.design.webflow.com'
+                    f'/api/v1/site/{design_host}/form/{el_id}/settings'
+                )
+                fetched.append('element_id')
+            else:
+                has_form = '<form' in html.lower()
+                if has_form:
+                    warnings.append('Форма найдена, но без data-wf-element-id — опубликуйте сайт в Webflow')
+                else:
+                    warnings.append('Форма не найдена на странице — добавьте форму в Webflow Designer')
+        else:
+            warnings.append(f'Не удалось загрузить {pub_url} → HTTP {r.status_code}')
+    except req.exceptions.Timeout:
+        warnings.append(f'Таймаут при загрузке {pub_url}')
+    except req.exceptions.RequestException as e:
+        warnings.append(f'Ошибка загрузки: {str(e)[:100]}')
+
+    msg_parts = [f'Хост: {design_host}']
+    if fetched:
+        label_map = {'site_id': 'Site ID', 'page_id': 'Page ID', 'element_id': 'Element ID'}
+        msg_parts.append('Получено: ' + ', '.join(label_map.get(f, f) for f in fetched))
+    else:
+        msg_parts.append('Не удалось получить ID — убедитесь что сайт опубликован')
+    if warnings:
+        msg_parts.append('; '.join(warnings))
+
+    return jsonify({
+        'success': True,
+        'config':  cfg,
+        'fetched': fetched,
+        'warnings': warnings,
+        'message': ' · '.join(msg_parts),
+    })
+
 
 @app.route('/api/random-vars')
 def api_random_vars():

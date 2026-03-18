@@ -4,22 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebFlow Sender</title>
+    <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');</script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --bg: #000000;
-            --bg-raised: #0a0a0a;
-            --bg-card: #111111;
-            --bg-input: #0a0a0a;
+            --primary: #e8915a;
+            --primary-hover: #d47d48;
+            --primary-muted: rgba(232,145,90,0.12);
+            --bg: #1a1a1e;
+            --bg-raised: #222226;
+            --bg-card: #28282d;
+            --bg-input: #1f1f23;
             --border: rgba(255,255,255,0.06);
-            --border-hover: rgba(255,255,255,0.12);
-            --text: #f5f5f7;
-            --text-secondary: #86868b;
-            --text-tertiary: #48484a;
-            --success: #30d158;
-            --danger: #ff453a;
+            --border-hover: rgba(255,255,255,0.1);
+            --text: #e8e8ed;
+            --text-secondary: #8e8e96;
+            --text-tertiary: #55555e;
+            --success: #5ec4b0;
+            --danger: #e87272;
+            --accent-glow: rgba(232,145,90,0.12);
             --radius: 14px;
             --radius-sm: 10px;
             --transition: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -28,6 +31,28 @@
         html, body, input, textarea, select, option, button, a, label, div, span, p, h1, h2, h3, h4, h5, h6, iframe {
             cursor: none !important;
         }
+        /* ─── Global scrollbar ─────────────────── */
+        * { scrollbar-width: thin; scrollbar-color: rgba(232,145,90,0.22) transparent; }
+        *::-webkit-scrollbar { width: 5px; height: 5px; }
+        *::-webkit-scrollbar-track { background: transparent; }
+        *::-webkit-scrollbar-thumb {
+            background: rgba(232,145,90,0.22);
+            border-radius: 100px;
+        }
+        *::-webkit-scrollbar-thumb:hover {
+            background: rgba(232,145,90,0.42);
+        }
+        *::-webkit-scrollbar-corner { background: transparent; }
+        /* Body / layout containers: no scrollbar (overflow hidden anyway) */
+        body::-webkit-scrollbar, html::-webkit-scrollbar { display: none; }
+        /* Sidebar nav: no scrollbar */
+        .sidebar::-webkit-scrollbar, .sidebar-nav::-webkit-scrollbar { display: none; }
+
+        /* ─── Text selection ────────────────────── */
+        ::selection { background: rgba(232,145,90,0.28); color: #f0d4be; }
+        ::-moz-selection { background: rgba(232,145,90,0.28); color: #f0d4be; }
+        [data-theme="light"] ::selection { background: rgba(201,122,66,0.22); color: #3a2010; }
+        [data-theme="light"] ::-moz-selection { background: rgba(201,122,66,0.22); color: #3a2010; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg);
@@ -42,27 +67,27 @@
             position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
         }
         .bg-orb {
-            position:absolute; border-radius:50%; filter:blur(90px); opacity:0.7;
+            position:absolute; border-radius:50%; filter:blur(100px); opacity:0.5;
             will-change: transform;
         }
         .bg-orb-1 {
             width:700px; height:700px; top:-10%; right:-5%;
-            background: radial-gradient(circle, rgba(15,23,42,1) 0%, rgba(30,58,95,0.8) 40%, transparent 70%);
+            background: radial-gradient(circle, rgba(40,40,55,0.9) 0%, rgba(30,30,42,0.5) 40%, transparent 70%);
             animation: orbFloat1 20s ease-in-out infinite alternate;
         }
         .bg-orb-2 {
             width:600px; height:600px; bottom:-15%; left:10%;
-            background: radial-gradient(circle, rgba(37,99,235,0.35) 0%, rgba(29,78,216,0.18) 40%, transparent 70%);
+            background: radial-gradient(circle, rgba(232,145,90,0.1) 0%, rgba(180,100,50,0.04) 40%, transparent 70%);
             animation: orbFloat2 25s ease-in-out infinite alternate;
         }
         .bg-orb-3 {
             width:500px; height:500px; top:40%; left:40%;
-            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.08) 50%, transparent 70%);
+            background: radial-gradient(circle, rgba(232,145,90,0.04) 0%, rgba(180,100,50,0.02) 50%, transparent 70%);
             animation: orbFloat3 18s ease-in-out infinite alternate;
         }
         .bg-orb-4 {
             width:400px; height:400px; top:10%; left:20%;
-            background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, rgba(147,197,253,0.03) 40%, transparent 60%);
+            background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, rgba(140,140,180,0.02) 40%, transparent 60%);
             animation: orbFloat4 22s ease-in-out infinite alternate;
         }
         @keyframes orbFloat1 { 0%{transform:translate(0,0) scale(1)} 50%{transform:translate(-40px,30px) scale(1.05)} 100%{transform:translate(20px,-20px) scale(0.95)} }
@@ -73,8 +98,8 @@
         .bg-grid {
             position:absolute; inset:0;
             background-image:
-                linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
             background-size: 80px 80px;
             mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 70%);
             -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 20%, transparent 70%);
@@ -82,7 +107,7 @@
 
         .bg-vignette {
             position:absolute; inset:0;
-            background: radial-gradient(ellipse 75% 75% at 50% 50%, transparent 35%, rgba(0,0,0,0.5) 100%);
+            background: radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(20,20,24,0.6) 100%);
         }
 
         /* Layout */
@@ -90,39 +115,50 @@
 
         /* Sidebar */
         .sidebar {
-            width: 240px;
-            min-width: 240px;
+            width: 260px;
+            min-width: 260px;
             background: var(--bg-raised);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
         }
         .sidebar-brand {
-            padding: 28px 24px 24px;
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 8px;
         }
         .sidebar-brand h1 {
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 800;
             letter-spacing: -0.3px;
             color: var(--text);
         }
         .sidebar-brand span {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             color: var(--text-tertiary);
-            letter-spacing: 0.5px;
+            letter-spacing: 1.2px;
             text-transform: uppercase;
             display: block;
-            margin-top: 4px;
+            margin-top: 6px;
         }
-        .sidebar-nav { flex:1; padding: 8px 12px; }
+        .sidebar-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 16px 20px 8px;
+        }
+        .sidebar-nav { flex:1; padding: 0 10px; }
         .nav-item {
+            position: relative;
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 11px 14px;
+            padding: 11px 16px;
             border-radius: var(--radius-sm);
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 500;
             color: var(--text-secondary);
             cursor: pointer;
@@ -130,13 +166,42 @@
             margin-bottom: 2px;
         }
         .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
-        .nav-item.active { background: rgba(59,130,246,0.1); color: var(--primary); font-weight: 600; }
+        .nav-item.active {
+            background: var(--primary-muted);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            border-radius: 0 3px 3px 0;
+            background: var(--primary);
+        }
         .nav-item .icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; flex-shrink: 0; }
+        .nav-item .nav-label { flex: 1; }
+        .nav-badge {
+            font-size: 10px;
+            font-weight: 700;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 10px;
+            background: var(--primary-muted);
+            color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
         .ico { width: 1.15em; height: 1.15em; display: inline-block; vertical-align: -0.2em; color: inherit; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-        .nav-item .icon .ico { width: 20px; height: 20px; }
+        .nav-item .icon .ico { width: 19px; height: 19px; }
         .timer-icon-wrap .ico { width: 28px; height: 28px; }
         .sidebar-footer {
-            padding: 16px 20px;
+            padding: 16px 18px;
             border-top: 1px solid var(--border);
         }
         .sidebar-footer a {
@@ -145,23 +210,28 @@
         .sidebar-footer a:hover { color: var(--text-secondary); }
 
         /* Main */
-        .main { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
         .content {
             max-width: 1200px;
-            margin: 0 auto;
             width: 100%;
             padding: 40px 48px;
-            height: 100vh;
-            overflow-y: auto;
+            flex-shrink: 0;
         }
-        .content::-webkit-scrollbar { width:6px; }
-        .content::-webkit-scrollbar-track { background:transparent; }
-        .content::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:10px; }
+        
 
         /* Pages */
         .page { display:none; animation: pageIn 0.3s ease; }
         .page.active { display:block; }
         @keyframes pageIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 0.8s linear infinite; }
 
         .page-title {
             font-size: 28px;
@@ -177,7 +247,7 @@
 
         /* Cards */
         .card {
-            background: rgba(17,17,17,0.7);
+            background: rgba(42,42,47,0.65);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border);
@@ -231,19 +301,19 @@
             border: 1px solid var(--border);
         }
         .btn-ghost:hover { background:rgba(255,255,255,0.08); border-color:var(--border-hover); }
-        .btn-danger { background:rgba(255,69,58,0.1); color:var(--danger); border:1px solid rgba(255,69,58,0.15); }
+        .btn-danger { background:rgba(232,114,114,0.1); color:var(--danger); border:1px solid rgba(232,114,114,0.15); }
         .btn-danger:hover { background:var(--danger); color:#fff; }
         .btn-accent {
-            background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(30,64,175,0.2));
-            color: #93c5fd;
-            border: 1px solid rgba(59,130,246,0.2);
+            background: linear-gradient(135deg, rgba(232,145,90,0.12), rgba(200,110,55,0.18));
+            color: #f0b088;
+            border: 1px solid rgba(232,145,90,0.2);
             backdrop-filter: blur(12px);
         }
         .btn-accent:hover {
-            background: linear-gradient(135deg, rgba(37,99,235,0.25), rgba(30,64,175,0.3));
-            border-color: rgba(96,165,250,0.35);
-            box-shadow: 0 0 20px rgba(37,99,235,0.2), 0 0 40px rgba(59,130,246,0.08);
-            color: #bfdbfe;
+            background: linear-gradient(135deg, rgba(232,145,90,0.22), rgba(200,110,55,0.28));
+            border-color: rgba(232,145,90,0.35);
+            box-shadow: 0 0 20px rgba(232,145,90,0.15), 0 0 40px rgba(232,145,90,0.06);
+            color: #f5c8a8;
             transform: translateY(-1px);
         }
         .btn-lg { padding:14px 28px; font-size:15px; font-weight:700; border-radius:var(--radius); }
@@ -266,20 +336,33 @@
         input:-webkit-autofill,
         input:-webkit-autofill:hover,
         input:-webkit-autofill:focus {
-            -webkit-box-shadow: 0 0 0 100px #0a0a0a inset !important;
-            -webkit-text-fill-color: #f5f5f7 !important;
-            caret-color: #f5f5f7;
+            -webkit-box-shadow: 0 0 0 100px #222226 inset !important;
+            -webkit-text-fill-color: #e8e8ed !important;
+            caret-color: #e8e8ed;
             transition: background-color 5000s ease-in-out 0s;
         }
         input:focus, textarea:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+            box-shadow: 0 0 0 3px rgba(232,145,90,0.12);
         }
         textarea { resize:none; min-height:180px; }
         .form-group { margin-bottom:20px; }
         .form-label {
             display:block; margin-bottom:8px;
             font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;
+        }
+        .label-hint {
+            font-weight:500; text-transform:none;
+            color:#f0b088; background:rgba(232,145,90,0.12);
+            border:1px solid rgba(232,145,90,0.2);
+            padding:2px 8px; border-radius:100px;
+            font-size:9px; margin-left:4px;
+            display:inline-block; vertical-align:middle;
+        }
+        [data-theme="light"] .label-hint {
+            color: var(--primary);
+            background: var(--primary-muted);
+            border-color: rgba(201,122,66,0.15);
         }
 
         /* Stepper */
@@ -296,7 +379,7 @@
             color:var(--primary); font-size:20px; font-weight:700; font-family:inherit;
             cursor:pointer; transition:background var(--transition); flex-shrink:0;
         }
-        .stepper-btn:hover { background:rgba(59,130,246,0.1); }
+        .stepper-btn:hover { background:rgba(232,145,90,0.1); }
         .stepper input[type="number"] {
             text-align:center; border:none; border-left:1px solid var(--border); border-right:1px solid var(--border);
             border-radius:0; background:transparent; font-size:16px; font-weight:700; padding:0; height:100%;
@@ -316,7 +399,7 @@
             transition: all var(--transition);
         }
         .account-card:hover { border-color:var(--border-hover); }
-        .account-card.selected { border-color:var(--primary); background:rgba(59,130,246,0.03); }
+        .account-card.selected { border-color:var(--primary); background:rgba(232,145,90,0.04); }
         .account-name { font-size:16px; font-weight:700; margin-bottom:2px; }
         .account-proxy { font-size:12px; color:var(--text-tertiary); font-family:monospace; }
         .account-stats { display:flex; gap:12px; margin:16px 0; }
@@ -362,7 +445,7 @@
             cursor:pointer; transition:all var(--transition);
         }
         .mode-opt:hover { border-color:var(--border-hover); color:var(--text); }
-        .mode-opt.active { border-color:var(--primary); background:rgba(59,130,246,0.06); color:var(--primary); }
+        .mode-opt.active { border-color:var(--primary); background:rgba(232,145,90,0.08); color:var(--primary); }
         .mode-title { font-size:14px; font-weight:700; margin-bottom:2px; }
         .mode-sub { font-size:11px; font-weight:500; opacity:0.6; }
 
@@ -385,12 +468,12 @@
         }
         .modal.active { display:flex; }
         .modal-box {
-            background:#1c1c1e; border:1px solid var(--border);
+            background:#2a2a2f; border:1px solid var(--border);
             border-radius:20px; padding:32px; max-width:420px; width:90%;
             animation: modalIn 0.25s ease;
         }
         .modal-box-wide {
-            background:#1c1c1e; border:1px solid var(--border);
+            background:#2a2a2f; border:1px solid var(--border);
             border-radius:20px; padding:28px; max-width:800px; width:90%; height:80vh;
             display:flex; flex-direction:column; animation: modalIn 0.25s ease;
         }
@@ -404,12 +487,73 @@
         }
         #toast-container > * { pointer-events:auto; }
 
+        /* Section layout */
+        .section { margin-bottom: 28px; }
+        .section:last-child { margin-bottom: 0; }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-header .ico {
+            width: 18px; height: 18px;
+            color: var(--primary);
+            opacity: 0.7;
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+        .action-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+        }
+        .action-bar-spacer { flex: 1; }
+        .info-strip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: rgba(232,145,90,0.04);
+            border: 1px solid rgba(232,145,90,0.08);
+            margin-bottom: 16px;
+        }
+        .info-strip .ico { width: 16px; height: 16px; color: var(--primary); flex-shrink: 0; }
+        [data-theme="light"] .action-bar {
+            background: var(--bg-card);
+            border-color: rgba(0,0,0,0.06);
+        }
+        [data-theme="light"] .section-header {
+            border-bottom-color: rgba(0,0,0,0.06);
+        }
+        [data-theme="light"] .info-strip {
+            background: rgba(201,122,66,0.03);
+            border-color: rgba(201,122,66,0.08);
+        }
+
         /* Helpers */
         .flex { display:flex; }
         .flex-between { display:flex; justify-content:space-between; align-items:center; }
         .gap-8 { gap:8px; }
         .gap-12 { gap:12px; }
         .gap-16 { gap:16px; }
+        .mb-8 { margin-bottom:8px; }
         .mb-16 { margin-bottom:16px; }
         .mb-24 { margin-bottom:24px; }
         .text-center { text-align:center; }
@@ -421,11 +565,11 @@
             display:inline-flex; align-items:center; gap:6px;
             padding:6px 14px; border-radius:100px;
             font-size:12px; font-weight:600;
-            background:rgba(59,130,246,0.08); color:var(--primary); border:1px solid rgba(59,130,246,0.15);
+            background:var(--primary-muted); color:var(--primary); border:1px solid rgba(232,145,90,0.15);
         }
         .tag { font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; }
         .code {
-            display:inline; background:rgba(59,130,246,0.08); color:var(--primary);
+            display:inline; background:var(--primary-muted); color:var(--primary);
             padding:2px 7px; border-radius:5px; font-size:12px; font-family:monospace;
         }
         .empty-state {
@@ -436,30 +580,23 @@
         /* Liquid Glass */
         .liquid-glass {
             position: relative;
-            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
-            backdrop-filter: blur(40px) saturate(1.8);
-            -webkit-backdrop-filter: blur(40px) saturate(1.8);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(42,42,47,0.5);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.06);
             overflow: hidden;
         }
         .liquid-glass::before {
             content:'';
             position:absolute; inset:0; border-radius:inherit; pointer-events:none;
-            background: linear-gradient(
-                135deg,
-                rgba(255,255,255,0.08) 0%,
-                rgba(255,255,255,0.02) 40%,
-                transparent 60%,
-                rgba(255,255,255,0.03) 100%
-            );
+            background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%);
             z-index:1;
         }
         .liquid-glass::after {
             content:'';
             position:absolute; top:-50%; left:-50%; width:200%; height:200%;
             border-radius:inherit; pointer-events:none;
-            background: radial-gradient(ellipse at 30% 20%, rgba(37,99,235,0.06) 0%, transparent 50%),
-                        radial-gradient(ellipse at 70% 80%, rgba(30,58,95,0.05) 0%, transparent 50%);
+            background: radial-gradient(ellipse at 30% 20%, rgba(232,145,90,0.03) 0%, transparent 50%);
             z-index:0;
             animation: liquidShift 8s ease-in-out infinite alternate;
         }
@@ -474,74 +611,67 @@
         /* Liquid glass variants */
         .liquid-glass-nav {
             position:relative;
-            background: rgba(255,255,255,0.02);
-            backdrop-filter: blur(20px) saturate(1.5);
-            -webkit-backdrop-filter: blur(20px) saturate(1.5);
+            background: transparent;
             border: 1px solid transparent;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(.25,.1,.25,1);
+            transition: all 0.25s cubic-bezier(.25,.1,.25,1);
         }
         .liquid-glass-nav::before {
             content:'';
             position:absolute; inset:0; border-radius:inherit; pointer-events:none;
-            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%);
-            opacity:0; transition: opacity 0.3s;
+            background: transparent;
+            opacity:0; transition: opacity 0.25s;
         }
         .liquid-glass-nav:hover::before { opacity:1; }
         .liquid-glass-nav:hover {
-            background: rgba(255,255,255,0.04);
-            border-color: rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
         }
         .liquid-glass-nav.active {
-            background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(30,58,95,0.06));
-            border-color: rgba(59,130,246,0.15);
+            background: var(--primary-muted);
+            border-color: rgba(232,145,90,0.1);
         }
         .liquid-glass-nav.active::before {
-            opacity:1;
-            background: linear-gradient(135deg, rgba(96,165,250,0.08) 0%, transparent 60%);
+            opacity:0;
         }
 
         .liquid-glass-btn {
             position:relative;
-            background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
-            backdrop-filter: blur(20px) saturate(1.6);
-            -webkit-backdrop-filter: blur(20px) saturate(1.6);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(.25,.1,.25,1);
+            transition: all 0.25s cubic-bezier(.25,.1,.25,1);
         }
         .liquid-glass-btn::before {
             content:'';
             position:absolute; top:0; left:0; right:0; height:50%;
             border-radius:inherit; pointer-events:none;
-            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%);
+            background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
             z-index:1;
         }
         .liquid-glass-btn:hover {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.04) 100%);
-            border-color: rgba(255,255,255,0.18);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.12);
             transform: translateY(-1px);
         }
         .liquid-glass-btn > * { position:relative; z-index:2; }
 
         .liquid-glass-stat {
             position:relative;
-            background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
-            backdrop-filter: blur(30px) saturate(1.6);
-            -webkit-backdrop-filter: blur(30px) saturate(1.6);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(42,42,47,0.5);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.05);
             overflow: hidden;
         }
         .liquid-glass-stat::before {
             content:'';
             position:absolute; top:0; left:0; right:0; height:1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
         }
         .liquid-glass-stat::after {
             content:'';
             position:absolute; inset:0; pointer-events:none; border-radius:inherit;
-            background: radial-gradient(ellipse at 20% 0%, rgba(37,99,235,0.05) 0%, transparent 60%);
+            background: none;
         }
         .liquid-glass-stat > * { position:relative; z-index:1; }
 
@@ -560,8 +690,8 @@
         }
         .custom-select-trigger:hover { border-color:var(--border-hover); }
         .custom-select-trigger.open {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(232,145,90,0.12);
         }
         .custom-select-trigger .arrow {
             width:16px; height:16px; transition:transform 0.2s;
@@ -570,13 +700,13 @@
         .custom-select-trigger.open .arrow { transform:rotate(180deg); }
         .custom-select-dropdown {
             position:absolute; top:calc(100% + 6px); left:0; right:0;
-            background: linear-gradient(145deg, rgba(28,28,30,0.97), rgba(20,20,22,0.98));
-            backdrop-filter: blur(40px) saturate(1.8);
-            -webkit-backdrop-filter: blur(40px) saturate(1.8);
-            border:1px solid rgba(255,255,255,0.1);
+            background: rgba(38,38,44,0.97);
+            backdrop-filter: blur(40px) saturate(1.4);
+            -webkit-backdrop-filter: blur(40px) saturate(1.4);
+            border:1px solid rgba(255,255,255,0.08);
             border-radius: var(--radius-sm);
             padding:4px; z-index:9999;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
             display:none;
             animation: dropIn 0.2s cubic-bezier(.2,1,.3,1);
         }
@@ -588,10 +718,10 @@
             transition: all 0.15s;
         }
         .custom-select-option:hover {
-            background: rgba(37,99,235,0.1); color:var(--text);
+            background: var(--primary-muted); color:var(--text);
         }
         .custom-select-option.selected {
-            background: rgba(37,99,235,0.15); color:#60a5fa; font-weight:600;
+            background: rgba(232,145,90,0.15); color:var(--primary); font-weight:600;
         }
         .custom-select-logs .custom-select-dropdown {
             max-height: 280px;
@@ -601,94 +731,233 @@
         /* Custom cursor */
         .cursor-glow {
             position:fixed; pointer-events:none; z-index:99998;
-            width:500px; height:500px; border-radius:50%;
-            background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, rgba(59,130,246,0.04) 30%, rgba(255,255,255,0.01) 55%, transparent 70%);
+            width:400px; height:400px; border-radius:50%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, rgba(232,145,90,0.03) 35%, transparent 65%);
             transform: translate(-50%,-50%);
-            transition: opacity 0.3s;
+            transition: opacity 0.4s, width 0.5s, height 0.5s;
             will-change: left, top;
         }
         .cursor-dot {
-            position:fixed; pointer-events:none; z-index:99998;
-            width:8px; height:8px; border-radius:50%;
-            background: linear-gradient(135deg, #1d4ed8, #3b82f6, #93c5fd);
+            position:fixed; pointer-events:none; z-index:99999;
+            width:6px; height:6px; border-radius:50%;
+            background: #e8e8ed;
             transform: translate(-50%,-50%);
-            transition: width 0.2s, height 0.2s, opacity 0.15s;
-            box-shadow: 0 0 12px rgba(37,99,235,0.6), 0 0 30px rgba(59,130,246,0.2);
+            transition: width 0.15s, height 0.15s, background 0.15s;
+            box-shadow: 0 0 8px rgba(232,145,90,0.4);
             will-change: left, top;
+            mix-blend-mode: difference;
         }
         .cursor-dot.active {
-            width:12px; height:12px;
-            box-shadow: 0 0 20px rgba(37,99,235,0.8), 0 0 50px rgba(59,130,246,0.3), 0 0 8px rgba(255,255,255,0.15);
+            width:40px; height:40px;
+            background: rgba(255,255,255,0.08);
+            box-shadow: none;
+            mix-blend-mode: normal;
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
         .cursor-ring {
             position:fixed; pointer-events:none; z-index:99998;
             width:36px; height:36px; border-radius:50%;
-            border: 1.5px solid rgba(59,130,246,0.2);
+            border: 1px solid rgba(255,255,255,0.12);
             transform: translate(-50%,-50%);
-            transition: width 0.25s cubic-bezier(.25,.1,.25,1), height 0.25s cubic-bezier(.25,.1,.25,1), border-color 0.25s;
+            transition: width 0.3s cubic-bezier(.25,.1,.25,1), height 0.3s cubic-bezier(.25,.1,.25,1), border-color 0.3s, opacity 0.3s;
             will-change: left, top;
         }
         .cursor-ring.active {
-            width:48px; height:48px;
-            border-color: rgba(59,130,246,0.35);
+            width:50px; height:50px;
+            border-color: rgba(232,145,90,0.25);
+            opacity:0;
         }
 
-        /* Gradient accents — blue-black + white */
+        /* Matte theme accents */
         .sidebar {
-            background: linear-gradient(180deg, rgba(6,9,26,0.92) 0%, rgba(8,8,8,0.95) 100%) !important;
-            backdrop-filter: blur(30px) saturate(1.3);
-            -webkit-backdrop-filter: blur(30px) saturate(1.3);
+            background: rgba(28,28,32,0.97) !important;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
         }
         .sidebar-brand h1 {
-            background: linear-gradient(135deg, #60a5fa, #3b82f6, #93c5fd);
+            background: linear-gradient(135deg, #f0f0f4, #a0a0a8);
             -webkit-background-clip:text; -webkit-text-fill-color:transparent;
             background-clip:text;
         }
         .nav-item.active {
-            background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(59,130,246,0.06)) !important;
-            color: #60a5fa !important;
+            background: var(--primary-muted) !important;
+            color: var(--primary) !important;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #1d4ed8, #2563eb, #3b82f6) !important;
+            background: var(--primary) !important;
             border: none;
         }
         .btn-primary:hover {
-            background: linear-gradient(135deg, #1e40af, #1d4ed8, #2563eb) !important;
-            box-shadow: 0 4px 24px rgba(37,99,235,0.35), 0 0 0 1px rgba(255,255,255,0.05);
+            background: var(--primary-hover) !important;
+            box-shadow: 0 4px 20px rgba(232,145,90,0.25);
         }
         .progress-fill {
-            background: linear-gradient(90deg, #1e3a5f, #2563eb, #60a5fa, rgba(255,255,255,0.6)) !important;
+            background: linear-gradient(90deg, rgba(232,145,90,0.6), var(--primary), rgba(255,200,160,0.7)) !important;
         }
         .badge {
-            background: linear-gradient(135deg, rgba(37,99,235,0.1), rgba(30,58,95,0.15)) !important;
-            color: #60a5fa !important;
-            border: 1px solid rgba(59,130,246,0.2) !important;
+            background: var(--primary-muted) !important;
+            color: var(--primary) !important;
+            border: 1px solid rgba(232,145,90,0.15) !important;
         }
         .account-card.selected {
-            border-color: rgba(37,99,235,0.35) !important;
-            background: rgba(37,99,235,0.03) !important;
-            box-shadow: 0 0 24px rgba(37,99,235,0.06);
+            border-color: rgba(232,145,90,0.25) !important;
+            background: rgba(232,145,90,0.04) !important;
         }
-        .stat-num.text-primary, .text-primary { color: #60a5fa !important; }
+        .stat-num.text-primary, .text-primary { color: var(--primary) !important; }
         input:focus, textarea:focus, select:focus {
-            border-color: #2563eb !important;
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(232,145,90,0.1) !important;
         }
         .mode-opt.active {
-            border-color: #2563eb !important;
-            background: rgba(37,99,235,0.06) !important;
-            color: #60a5fa !important;
+            border-color: var(--primary) !important;
+            background: var(--primary-muted) !important;
+            color: var(--primary) !important;
         }
         .code {
-            background: rgba(37,99,235,0.1) !important;
-            color: #60a5fa !important;
+            background: var(--primary-muted) !important;
+            color: var(--primary) !important;
         }
         .tpl-card:hover {
-            border-color: rgba(59,130,246,0.25) !important;
-            box-shadow: 0 4px 20px rgba(37,99,235,0.08);
+            border-color: rgba(232,145,90,0.2) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
-        .stepper-btn { color: #3b82f6 !important; }
-        .stepper-btn:hover { background: rgba(37,99,235,0.1) !important; }
+        .stepper-btn { color: var(--primary) !important; }
+        .stepper-btn:hover { background: var(--primary-muted) !important; }
+
+        /* ===== LIGHT THEME ===== */
+        [data-theme="light"] {
+            --bg: #f5f3f0;
+            --bg-raised: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #edebe8;
+            --border: rgba(0,0,0,0.07);
+            --border-hover: rgba(0,0,0,0.13);
+            --text: #1a1a1e;
+            --text-secondary: #65656d;
+            --text-tertiary: #a0a0a8;
+            --primary: #c97a42;
+            --primary-hover: #b56930;
+            --primary-muted: rgba(201,122,66,0.08);
+            --success: #3aa08d;
+            --danger: #d44545;
+            --accent-glow: rgba(201,122,66,0.06);
+        }
+        [data-theme="light"] .bg-orb { opacity: 0.35; }
+        [data-theme="light"] .bg-orb-1 { background: radial-gradient(circle, rgba(232,200,170,0.6) 0%, rgba(220,190,160,0.2) 40%, transparent 70%); }
+        [data-theme="light"] .bg-orb-2 { background: radial-gradient(circle, rgba(200,160,120,0.15) 0%, rgba(210,175,140,0.06) 40%, transparent 70%); }
+        [data-theme="light"] .bg-orb-3 { background: radial-gradient(circle, rgba(201,122,66,0.05) 0%, transparent 50%); }
+        [data-theme="light"] .bg-orb-4 { background: radial-gradient(circle, rgba(201,122,66,0.03) 0%, transparent 40%); }
+        [data-theme="light"] .bg-grid { background-image: linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px); }
+        [data-theme="light"] .bg-vignette { background: radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(245,243,240,0.5) 100%); }
+        [data-theme="light"] .sidebar { background: rgba(255,255,255,0.92) !important; border-right-color: rgba(0,0,0,0.06); }
+        [data-theme="light"] .sidebar-brand { border-bottom-color: rgba(0,0,0,0.06); }
+        [data-theme="light"] .sidebar-brand h1 { background: linear-gradient(135deg, #1a1a1e, #65656d); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        [data-theme="light"] .sidebar-section-label { color: var(--text-tertiary); }
+        [data-theme="light"] .nav-item:hover { background: rgba(0,0,0,0.03); color: var(--text); }
+        [data-theme="light"] .nav-item.active { background: var(--primary-muted) !important; color: var(--primary) !important; }
+        [data-theme="light"] .nav-item.active::before { background: var(--primary); }
+        [data-theme="light"] .liquid-glass-nav:hover { background: rgba(0,0,0,0.02); border-color: transparent; }
+        [data-theme="light"] .liquid-glass-nav.active { background: var(--primary-muted); border-color: rgba(201,122,66,0.1); }
+        [data-theme="light"] .liquid-glass-nav.active::before { opacity:0; }
+        [data-theme="light"] .card { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.06); }
+        [data-theme="light"] .card:hover { border-color: rgba(0,0,0,0.1); }
+        [data-theme="light"] .page-title { background: linear-gradient(135deg, #1a1a1e, #65656d); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        [data-theme="light"] .stat-box { background: var(--bg-card); }
+        [data-theme="light"] .liquid-glass { background: rgba(255,255,255,0.78); border-color: rgba(0,0,0,0.06); }
+        [data-theme="light"] .liquid-glass::before { background: linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 50%); }
+        [data-theme="light"] .liquid-glass::after { background: none; }
+        [data-theme="light"] .liquid-glass-stat { background: rgba(255,255,255,0.88); border-color: rgba(0,0,0,0.05); }
+        [data-theme="light"] .liquid-glass-stat::before { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.04), transparent); }
+        [data-theme="light"] .liquid-glass-stat::after { background: none; }
+        [data-theme="light"] .liquid-glass-btn { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.08); }
+        [data-theme="light"] .liquid-glass-btn::before { background: none; }
+        [data-theme="light"] .liquid-glass-btn:hover { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); }
+        [data-theme="light"] .btn-ghost { background: rgba(0,0,0,0.03); color: var(--text); border-color: rgba(0,0,0,0.08); }
+        [data-theme="light"] .btn-ghost:hover { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.12); }
+        [data-theme="light"] .btn-danger { background: rgba(212,69,69,0.06); color: var(--danger); border-color: rgba(212,69,69,0.12); }
+        [data-theme="light"] .btn-danger:hover { background: var(--danger); color: #fff; }
+        [data-theme="light"] .btn-accent { background: var(--primary-muted); color: var(--primary); border-color: rgba(201,122,66,0.12); }
+        [data-theme="light"] .btn-accent:hover { background: rgba(201,122,66,0.12); border-color: rgba(201,122,66,0.2); }
+        [data-theme="light"] .btn:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        [data-theme="light"] .btn-ghost:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        [data-theme="light"] .btn-danger:hover { box-shadow: 0 2px 12px rgba(212,69,69,0.12); }
+        [data-theme="light"] .badge { background: var(--primary-muted) !important; color: var(--primary) !important; border-color: rgba(201,122,66,0.12) !important; }
+        [data-theme="light"] .code { background: var(--primary-muted) !important; color: var(--primary) !important; }
+        [data-theme="light"] .stat-num.text-primary, [data-theme="light"] .text-primary { color: var(--primary) !important; }
+        [data-theme="light"] .text-success { color: var(--success) !important; }
+        [data-theme="light"] .text-danger { color: var(--danger) !important; }
+        [data-theme="light"] .account-card { background: var(--bg-card); border-color: rgba(0,0,0,0.05); }
+        [data-theme="light"] .account-card:hover { border-color: rgba(0,0,0,0.1); }
+        [data-theme="light"] .account-card.selected { border-color: rgba(201,122,66,0.25) !important; background: rgba(201,122,66,0.03) !important; }
+        [data-theme="light"] .account-stat { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.05); }
+        [data-theme="light"] .tpl-card { border-color: rgba(0,0,0,0.05); background: rgba(255,255,255,0.88); }
+        [data-theme="light"] .tpl-card::before { background: linear-gradient(90deg, transparent 10%, rgba(0,0,0,0.04) 50%, transparent 90%); }
+        [data-theme="light"] .tpl-card:hover { border-color: rgba(201,122,66,0.15) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        [data-theme="light"] .mode-opt { border-color: rgba(0,0,0,0.07); color: var(--text-secondary); }
+        [data-theme="light"] .mode-opt:hover { border-color: rgba(0,0,0,0.12); color: var(--text); }
+        [data-theme="light"] .mode-opt.active { border-color: var(--primary) !important; background: var(--primary-muted) !important; color: var(--primary) !important; }
+        [data-theme="light"] .progress-track { background: rgba(0,0,0,0.04); }
+        [data-theme="light"] .log-box { color: var(--text-secondary); background: var(--bg-input); border-color: rgba(0,0,0,0.05); }
+        [data-theme="light"] .modal { background: rgba(0,0,0,0.25); }
+        [data-theme="light"] .modal-box { background: #fff; border-color: rgba(0,0,0,0.06); }
+        [data-theme="light"] .modal-box-wide { background: #fff; border-color: rgba(0,0,0,0.06); }
+        [data-theme="light"] .custom-select-dropdown { background: rgba(255,255,255,0.97); border-color: rgba(0,0,0,0.08); box-shadow: 0 12px 40px rgba(0,0,0,0.1); }
+        [data-theme="light"] .custom-select-option:hover { background: var(--primary-muted); }
+        [data-theme="light"] .custom-select-option.selected { background: rgba(201,122,66,0.1); color: var(--primary); }
+        [data-theme="light"] input:-webkit-autofill, [data-theme="light"] input:-webkit-autofill:hover, [data-theme="light"] input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 100px #edebe8 inset !important; -webkit-text-fill-color: #1a1a1e !important; caret-color: #1a1a1e; }
+        [data-theme="light"] .stepper-btn { color: var(--primary) !important; }
+        [data-theme="light"] .stepper-btn:hover { background: var(--primary-muted) !important; }
+        [data-theme="light"] input:focus, [data-theme="light"] textarea:focus, [data-theme="light"] select:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(201,122,66,0.08) !important; }
+        
+        [data-theme="light"] .chart-bar { background: linear-gradient(180deg, var(--primary), #b56930); }
+        [data-theme="light"] .chart-bar:hover { background: linear-gradient(180deg, #e0a070, var(--primary)); }
+        [data-theme="light"] .timer-display { background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.06) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        [data-theme="light"] .timer-active .timer-display { background: linear-gradient(180deg, #a06030 0%, var(--primary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        [data-theme="light"] .timer-done .timer-display { background: linear-gradient(180deg, #2a8070 0%, var(--success) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        [data-theme="light"] .timer-error .timer-display { background: linear-gradient(180deg, #a83030 0%, var(--danger) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        [data-theme="light"] .timer-active .timer-sub-value { color: var(--primary); }
+        [data-theme="light"] .timer-active .timer-label { color: var(--primary); }
+        [data-theme="light"] .timer-done .timer-label { color: var(--success); }
+        [data-theme="light"] .timer-error .timer-label { color: var(--danger); }
+        [data-theme="light"] .cursor-glow { background: radial-gradient(circle, rgba(201,122,66,0.04) 0%, transparent 50%); }
+        [data-theme="light"] .cursor-dot { background: #1a1a1e; box-shadow: none; mix-blend-mode: normal; }
+        [data-theme="light"] .cursor-dot.active { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); }
+        [data-theme="light"] .cursor-ring { border-color: rgba(0,0,0,0.1); }
+        [data-theme="light"] .cursor-ring.active { border-color: rgba(201,122,66,0.2); opacity:0; }
+        [data-theme="light"] .sidebar-footer { border-top-color: rgba(0,0,0,0.05); }
+        [data-theme="light"] .template-editor-tab.active { background: var(--primary-muted) !important; color: var(--primary) !important; border-color: rgba(201,122,66,0.15) !important; }
+        [data-theme="light"] .info-strip { background: rgba(201,122,66,0.03); border-color: rgba(201,122,66,0.08); }
+        [data-theme="light"] .nav-badge { background: var(--primary-muted); color: var(--primary); }
+
+        /* Theme toggle compact */
+        .theme-toggle-compact {
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text-secondary);
+            transition: all var(--transition);
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+        .theme-toggle-compact:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--border-hover);
+            color: var(--text);
+        }
+        [data-theme="light"] .theme-toggle-compact {
+            background: rgba(0,0,0,0.03);
+            border-color: rgba(0,0,0,0.08);
+        }
+        [data-theme="light"] .theme-toggle-compact:hover {
+            background: rgba(0,0,0,0.06);
+            border-color: rgba(0,0,0,0.12);
+        }
 
         /* Status bar pulse */
         @keyframes statusPulse {
@@ -700,11 +969,11 @@
         /* Analytics chart bar */
         .chart-bar {
             flex:1; min-width:0; border-radius:4px 4px 0 0;
-            background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+            background: linear-gradient(180deg, #e8915a, #c97a42);
             transition: height 0.4s ease;
             position:relative;
         }
-        .chart-bar:hover { background: linear-gradient(180deg, #60a5fa, #2563eb); }
+        .chart-bar:hover { background: linear-gradient(180deg, #f0a878, #e8915a); }
         .chart-bar-label {
             position:absolute; bottom:-20px; left:50%; transform:translateX(-50%);
             font-size:8px; color:var(--text-tertiary); white-space:nowrap;
@@ -715,18 +984,158 @@
         }
 
         /* Drag-drop overlay */
-        #drop-zone.drag-over textarea { border-color: var(--primary) !important; background: rgba(59,130,246,0.05) !important; }
+        #drop-zone.drag-over textarea { border-color: var(--primary) !important; background: var(--primary-muted) !important; }
         
         /* Template editor tabs */
-        .template-editor-tab.active { background: rgba(59,130,246,0.15) !important; color: #60a5fa !important; border-color: rgba(59,130,246,0.3) !important; }
+        .template-editor-tab.active { background: var(--primary-muted) !important; color: var(--primary) !important; border-color: rgba(232,145,90,0.2) !important; }
+
+        /* Inline preview panel */
+        .preview-panel {
+            display: none;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: #fff;
+            transition: all 0.3s cubic-bezier(.25,.1,.25,1);
+        }
+        .preview-panel.open { display: block; }
+        .preview-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 18px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+        .preview-panel-header span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .preview-panel-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .preview-panel-actions button {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: inherit;
+            transition: all var(--transition);
+        }
+        .preview-panel-actions button:hover {
+            background: rgba(255,255,255,0.1);
+            color: var(--text);
+        }
+        .preview-panel-body {
+            padding: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(.25,.1,.25,1);
+        }
+        .preview-panel-body.collapsed {
+            max-height: 500px;
+            position: relative;
+        }
+        .preview-panel-body.collapsed::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(transparent, #fff);
+            pointer-events: none;
+        }
+        .preview-panel-body.expanded {
+            max-height: none;
+        }
+        .preview-panel-content {
+            padding: 24px;
+            color: #1a1a1e;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .preview-panel-content img {
+            max-width: 100%;
+            height: auto;
+        }
+        .preview-panel-content table {
+            max-width: 100%;
+        }
+        .preview-expand-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .preview-expand-bar:hover {
+            background: var(--primary-muted);
+        }
+        .preview-expand-bar span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .preview-expand-bar .expand-arrow {
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+        .preview-expand-bar.expanded .expand-arrow {
+            transform: rotate(180deg);
+        }
+        [data-theme="light"] .preview-panel { border-color: rgba(0,0,0,0.08); }
+        [data-theme="light"] .preview-panel-header { background: var(--bg-input); border-bottom-color: rgba(0,0,0,0.06); }
+        [data-theme="light"] .preview-panel-actions button { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.08); color: var(--text-secondary); }
+        [data-theme="light"] .preview-panel-actions button:hover { background: rgba(0,0,0,0.06); color: var(--text); }
+        [data-theme="light"] .preview-expand-bar { background: var(--bg-input); border-top-color: rgba(0,0,0,0.06); }
+        [data-theme="light"] .preview-panel-body.collapsed::after { background: linear-gradient(transparent, #fff); }
+
+        /* Fullscreen preview body */
+        .fullscreen-preview-body {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: #fff;
+            padding: 0;
+        }
+        /* Scrollbar inside fullscreen preview — amber track on dark modal background */
+        .fullscreen-preview-body::-webkit-scrollbar { width: 6px; }
+        .fullscreen-preview-body::-webkit-scrollbar-track {
+            background: rgba(232,145,90,0.04);
+            border-radius: 100px;
+        }
+        .fullscreen-preview-body::-webkit-scrollbar-thumb {
+            background: rgba(232,145,90,0.3);
+            border-radius: 100px;
+        }
+        .fullscreen-preview-body::-webkit-scrollbar-thumb:hover {
+            background: rgba(232,145,90,0.55);
+        }
+        .fullscreen-preview-body { scrollbar-width: thin; scrollbar-color: rgba(232,145,90,0.3) rgba(232,145,90,0.04); }
 
         /* Global button glow on hover */
-        .btn:hover { box-shadow: 0 0 16px rgba(37,99,235,0.12); }
-        .btn-primary:hover { box-shadow: 0 4px 24px rgba(37,99,235,0.35), 0 0 60px rgba(37,99,235,0.1) !important; }
-        .btn-ghost:hover { box-shadow: 0 0 16px rgba(255,255,255,0.04), 0 0 30px rgba(37,99,235,0.06); }
-        .btn-danger:hover { box-shadow: 0 0 20px rgba(255,69,58,0.25); }
+        .btn:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+        .btn-primary:hover { box-shadow: 0 4px 20px rgba(232,145,90,0.25) !important; }
+        .btn-ghost:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+        .btn-danger:hover { box-shadow: 0 2px 16px rgba(232,114,114,0.2); }
         .page-title {
-            background: linear-gradient(135deg, #f5f5f7 0%, #d1d5db 50%, rgba(96,165,250,0.4) 100%);
+            background: linear-gradient(135deg, #e8e8ed 0%, #8e8e96 100%);
             -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
         }
 
@@ -736,20 +1145,20 @@
             padding: 28px 24px 24px;
             border-radius: var(--radius);
             overflow: hidden;
-            border-color: rgba(59,130,246,0.15) !important;
+            border-color: rgba(232,145,90,0.1) !important;
             transition: all 0.5s cubic-bezier(.25,.1,.25,1);
         }
         .timer-block.timer-active {
-            border-color: rgba(59,130,246,0.35) !important;
-            box-shadow: 0 0 40px rgba(37,99,235,0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+            border-color: rgba(232,145,90,0.25) !important;
+            box-shadow: 0 0 30px rgba(232,145,90,0.06);
         }
         .timer-block.timer-done {
-            border-color: rgba(48,209,88,0.3) !important;
-            box-shadow: 0 0 40px rgba(48,209,88,0.08);
+            border-color: rgba(94,196,176,0.2) !important;
+            box-shadow: 0 0 30px rgba(94,196,176,0.05);
         }
         .timer-block.timer-error {
-            border-color: rgba(255,69,58,0.3) !important;
-            box-shadow: 0 0 40px rgba(255,69,58,0.08);
+            border-color: rgba(232,114,114,0.2) !important;
+            box-shadow: 0 0 30px rgba(232,114,114,0.05);
         }
         .timer-inner { position: relative; z-index: 2; }
         .timer-header {
@@ -762,23 +1171,22 @@
             width: 36px; height: 36px;
             display: flex; align-items: center; justify-content: center;
             border-radius: 10px;
-            background: rgba(59,130,246,0.1);
-            border: 1px solid rgba(59,130,246,0.15);
+            background: var(--primary-muted);
+            border: 1px solid rgba(232,145,90,0.1);
             font-size: 18px;
             transition: all 0.4s;
         }
         .timer-active .timer-icon-wrap {
-            background: rgba(59,130,246,0.15);
-            border-color: rgba(59,130,246,0.3);
-            box-shadow: 0 0 16px rgba(37,99,235,0.2);
+            background: rgba(232,145,90,0.15);
+            border-color: rgba(232,145,90,0.25);
         }
         .timer-done .timer-icon-wrap {
-            background: rgba(48,209,88,0.12);
-            border-color: rgba(48,209,88,0.25);
+            background: rgba(94,196,176,0.1);
+            border-color: rgba(94,196,176,0.2);
         }
         .timer-error .timer-icon-wrap {
-            background: rgba(255,69,58,0.12);
-            border-color: rgba(255,69,58,0.25);
+            background: rgba(232,114,114,0.1);
+            border-color: rgba(232,114,114,0.2);
         }
         .timer-label {
             font-size: 12px;
@@ -787,9 +1195,9 @@
             text-transform: uppercase;
             letter-spacing: 0.8px;
         }
-        .timer-active .timer-label { color: #60a5fa; }
-        .timer-done .timer-label { color: #30d158; }
-        .timer-error .timer-label { color: #ff453a; }
+        .timer-active .timer-label { color: var(--primary); }
+        .timer-done .timer-label { color: var(--success); }
+        .timer-error .timer-label { color: var(--danger); }
         .timer-display {
             font-size: 56px;
             font-weight: 900;
@@ -805,21 +1213,21 @@
             transition: all 0.4s;
         }
         .timer-active .timer-display {
-            background: linear-gradient(180deg, #93c5fd 0%, #3b82f6 50%, #1d4ed8 100%);
+            background: linear-gradient(180deg, #f5c8a8 0%, var(--primary) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            filter: drop-shadow(0 0 20px rgba(59,130,246,0.3));
+            filter: none;
         }
         .timer-done .timer-display {
-            background: linear-gradient(180deg, #86efac 0%, #30d158 50%, #16a34a 100%);
+            background: linear-gradient(180deg, #a8e0d4 0%, var(--success) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            filter: drop-shadow(0 0 20px rgba(48,209,88,0.3));
+            filter: none;
         }
         .timer-error .timer-display {
-            background: linear-gradient(180deg, #fca5a5 0%, #ff453a 50%, #dc2626 100%);
+            background: linear-gradient(180deg, #f0b8b8 0%, var(--danger) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -849,7 +1257,7 @@
             color: var(--text-secondary);
             font-variant-numeric: tabular-nums;
         }
-        .timer-active .timer-sub-value { color: #93c5fd; }
+        .timer-active .timer-sub-value { color: var(--primary); }
         .timer-sub-divider {
             width: 1px;
             height: 30px;
@@ -866,12 +1274,12 @@
         }
         .timer-active .timer-glow {
             opacity: 1;
-            background: radial-gradient(ellipse at 50% 30%, rgba(37,99,235,0.08) 0%, transparent 60%);
+            background: radial-gradient(ellipse at 50% 30%, rgba(232,145,90,0.05) 0%, transparent 60%);
             animation: timerPulse 3s ease-in-out infinite;
         }
         .timer-done .timer-glow {
             opacity: 1;
-            background: radial-gradient(ellipse at 50% 30%, rgba(48,209,88,0.06) 0%, transparent 60%);
+            background: radial-gradient(ellipse at 50% 30%, rgba(94,196,176,0.04) 0%, transparent 60%);
         }
         @keyframes timerPulse {
             0%, 100% { opacity: 0.6; transform: scale(1); }
@@ -885,6 +1293,129 @@
         .timer-tick .timer-display {
             animation: timerTick 0.3s ease;
         }
+
+        /* ─── Theme transition ripple ────────────── */
+        #theme-ripple {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            pointer-events: none;
+            clip-path: circle(0px at var(--ripple-x, 50%) var(--ripple-y, 50%));
+            transition: clip-path 0.5s cubic-bezier(0.22, 0.68, 0.35, 1);
+            will-change: clip-path;
+            opacity: 1;
+        }
+        #theme-ripple.expanding {
+            clip-path: circle(200vmax at var(--ripple-x, 50%) var(--ripple-y, 50%));
+        }
+        #theme-ripple.dissolving {
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        /* Soft color / text fade while theme switches */
+        html.theme-fading,
+        html.theme-fading *:not(#theme-ripple):not(.cursor-glow):not(.cursor-dot):not(.cursor-ring) {
+            transition:
+                color            0.25s ease-out,
+                background-color 0.25s ease-out,
+                border-color     0.2s ease-out,
+                box-shadow       0.2s ease-out,
+                fill             0.2s ease-out,
+                stroke           0.2s ease-out,
+                opacity          0.2s ease-out !important;
+        }
+
+        /* Icon spin on toggle — softer, slower */
+        @keyframes themeIconSpin {
+            0%   { transform: rotate(0deg)   scale(1);   opacity: 1; }
+            50%  { transform: rotate(180deg) scale(0.7); opacity: 0.3; }
+            100% { transform: rotate(360deg) scale(1);   opacity: 1; }
+        }
+        .theme-toggle-compact.switching svg {
+            animation: themeIconSpin 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+        }
+
+        /* ─── Send page layout ───────────────────── */
+        .send-account-strip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius);
+        }
+        .send-account-strip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            flex-shrink: 0;
+        }
+        .send-grid {
+            display: grid;
+            grid-template-columns: 58fr 42fr;
+            gap: 24px;
+            align-items: start;
+        }
+        .send-col-left, .send-col-right { display: flex; flex-direction: column; gap: 0; }
+
+        .send-stat-box {
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+        }
+        .send-stat-success {
+            background: rgba(94,196,176,0.07);
+            border-color: rgba(94,196,176,0.14);
+        }
+        .send-stat-error {
+            background: rgba(232,114,114,0.07);
+            border-color: rgba(232,114,114,0.14);
+        }
+
+        /* ─── Error reference collapsible ──────────── */
+        .send-errref-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .send-errref-body.open {
+            max-height: 400px;
+        }
+
+        @keyframes errRefRow {
+            from { opacity: 0; transform: translateY(6px) translateX(-8px); }
+            to   { opacity: 1; transform: translateY(0) translateX(0); }
+        }
+
+        .send-errref-body thead tr,
+        .send-errref-body tbody tr {
+            opacity: 0;
+        }
+        .send-errref-body.open thead tr {
+            animation: errRefRow 0.25s ease-out both;
+            animation-delay: 0.05s;
+        }
+        .send-errref-body.open tbody tr {
+            animation: errRefRow 0.25s ease-out both;
+        }
+        .send-errref-body.open tbody tr:nth-child(1) { animation-delay: 0.08s; }
+        .send-errref-body.open tbody tr:nth-child(2) { animation-delay: 0.12s; }
+        .send-errref-body.open tbody tr:nth-child(3) { animation-delay: 0.16s; }
+        .send-errref-body.open tbody tr:nth-child(4) { animation-delay: 0.20s; }
+        .send-errref-body.open tbody tr:nth-child(5) { animation-delay: 0.24s; }
+        .send-errref-body.open tbody tr:nth-child(6) { animation-delay: 0.28s; }
+        .send-errref-body.open tbody tr:nth-child(7) { animation-delay: 0.32s; }
+        .send-errref-body.open tbody tr:nth-child(8) { animation-delay: 0.36s; }
+        .send-errref-body.open tbody tr:nth-child(9) { animation-delay: 0.40s; }
+
+        .section:has(.send-errref-body.open) .send-errref-arrow {
+            transform: rotate(90deg);
+        }
     </style>
 </head>
 <body>
@@ -892,7 +1423,9 @@
         <defs>
             <symbol id="ico-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M4 20v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></symbol>
             <symbol id="ico-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
+            <symbol id="ico-loader" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></symbol>
             <symbol id="ico-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></symbol>
+            <symbol id="ico-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></symbol>
             <symbol id="ico-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></symbol>
             <symbol id="ico-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></symbol>
             <symbol id="ico-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.27 6.96 9 5.04m8.73-5.04-9 5.04M12 22.08V12"/></symbol>
@@ -945,22 +1478,27 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-brand">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
                     <h1>WebFlow Sender</h1>
-                <span>by Ew1lexa</span>
+                    <button class="theme-toggle-compact" id="theme-toggle-icon" onclick="toggleTheme()" title="Сменить тему"></button>
+                </div>
+                <span>mass mailer pro</span>
                 </div>
             <div class="sidebar-nav">
-                <div class="nav-item liquid-glass-nav active" data-page="accounts"><span class="icon"><svg class="ico"><use href="#ico-user"/></svg></span> Аккаунты</div>
-                <div class="nav-item liquid-glass-nav" data-page="template"><span class="icon"><svg class="ico"><use href="#ico-mail"/></svg></span> Шаблон</div>
-                <div class="nav-item liquid-glass-nav" data-page="settings"><span class="icon"><svg class="ico"><use href="#ico-gear"/></svg></span> Настройки</div>
-                <div class="nav-item liquid-glass-nav" data-page="send"><span class="icon"><svg class="ico"><use href="#ico-send"/></svg></span> Отправка</div>
-                <div class="nav-item liquid-glass-nav" data-page="analytics"><span class="icon"><svg class="ico"><use href="#ico-chart"/></svg></span> Аналитика</div>
+                <div class="sidebar-section-label">Рабочее пространство</div>
+                <div class="nav-item liquid-glass-nav active" data-page="accounts"><span class="icon"><svg class="ico"><use href="#ico-user"/></svg></span><span class="nav-label">Аккаунты</span><span class="nav-badge" id="nav-badge-accounts">0</span></div>
+                <div class="nav-item liquid-glass-nav" data-page="template"><span class="icon"><svg class="ico"><use href="#ico-mail"/></svg></span><span class="nav-label">Шаблон</span></div>
+                <div class="nav-item liquid-glass-nav" data-page="settings"><span class="icon"><svg class="ico"><use href="#ico-gear"/></svg></span><span class="nav-label">Настройки</span></div>
+                <div class="sidebar-section-label">Действия</div>
+                <div class="nav-item liquid-glass-nav" data-page="send"><span class="icon"><svg class="ico"><use href="#ico-send"/></svg></span><span class="nav-label">Отправка</span></div>
+                <div class="nav-item liquid-glass-nav" data-page="analytics"><span class="icon"><svg class="ico"><use href="#ico-chart"/></svg></span><span class="nav-label">Аналитика</span></div>
             </div>
             <div class="sidebar-footer">
                 <div id="sidebar-status" style="display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:12px; font-weight:600;">
                     <span id="status-dot" style="width:8px; height:8px; border-radius:50%; background:#48484a; flex-shrink:0;"></span>
                     <span id="status-text" style="color:var(--text-secondary);">Готов</span>
                 </div>
-                <a href="https://t.me/Ew1lexa" target="_blank">Telegram: @Ew1lexa</a>
+                <a href="https://t.me/Iucefer" target="_blank">Telegram: @lucefer</a>
             </div>
         </div>
 
@@ -977,102 +1515,159 @@
                         </div>
                         <div id="active-badge" style="display:none;" class="badge">● <span id="active-badge-name"></span></div>
                     </div>
-                    <div class="stat-grid">
-                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Аккаунтов</div><div class="stat-num" id="stat-total">0</div></div>
-                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Писем отправлено</div><div class="stat-num text-primary" id="stat-sent">0</div></div>
-                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Система</div><div class="stat-num text-success" style="font-size:20px;">Онлайн</div></div>
+
+                    <div class="section">
+                        <div class="section-header">
+                            <svg class="ico"><use href="#ico-chart"/></svg>
+                            <span class="section-title">Обзор</span>
                         </div>
-                    <div class="flex-between mb-16">
-                        <button class="btn btn-primary" onclick="openCreateAccountModal()">+ Добавить аккаунт</button>
-                        <div class="flex gap-8">
-                            <button class="btn btn-accent" onclick="exportAllData()"><svg class="ico" style="margin-right:6px;"><use href="#ico-box"/></svg>Экспорт</button>
-                            <label class="btn btn-accent" style="display:inline-flex;"><svg class="ico" style="margin-right:6px;"><use href="#ico-download"/></svg>Импорт<input type="file" accept=".json" style="display:none;" onchange="importAllData(event)"></label>
-                            <button class="btn btn-danger" onclick="deleteAllAccounts()">Очистить</button>
+                        <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
+                            <div class="stat-box liquid-glass-stat"><div class="stat-label">Аккаунтов</div><div class="stat-num" id="stat-total">0</div></div>
+                            <div class="stat-box liquid-glass-stat"><div class="stat-label">Писем отправлено</div><div class="stat-num text-primary" id="stat-sent">0</div></div>
+                            <div class="stat-box liquid-glass-stat"><div class="stat-label">Активный режим</div><div class="stat-num" style="font-size:18px; color:var(--primary);" id="stat-mode">Режим 1</div></div>
+                            <div class="stat-box liquid-glass-stat"><div class="stat-label">Система</div><div class="stat-num text-success" style="font-size:20px;">Онлайн</div></div>
                         </div>
                     </div>
-                    <div class="accounts-grid" id="accounts-list"></div>
+
+                    <div class="section">
+                        <div class="section-header">
+                            <svg class="ico"><use href="#ico-user"/></svg>
+                            <span class="section-title">Список аккаунтов</span>
+                            <div style="flex:1;"></div>
+                            <div class="flex gap-8">
+                                <button class="btn btn-accent" style="padding:5px 12px; font-size:11px;" onclick="exportAllData()"><svg class="ico" style="margin-right:4px;"><use href="#ico-box"/></svg>Экспорт</button>
+                                <label class="btn btn-accent" style="display:inline-flex; padding:5px 12px; font-size:11px;"><svg class="ico" style="margin-right:4px;"><use href="#ico-download"/></svg>Импорт<input type="file" accept=".json" style="display:none;" onchange="importAllData(event)"></label>
+                            </div>
+                        </div>
+                        <div class="action-bar">
+                            <button class="btn btn-primary" onclick="openCreateAccountModal()"><svg class="ico" style="margin-right:6px;"><use href="#ico-user"/></svg>Добавить аккаунт</button>
+                            <div class="action-bar-spacer"></div>
+                            <button class="btn btn-danger" onclick="deleteAllAccounts()"><svg class="ico" style="margin-right:6px;"><use href="#ico-trash"/></svg>Очистить всё</button>
+                        </div>
+                        <div class="accounts-grid" id="accounts-list"></div>
+                    </div>
                 </div>
 
                 <!-- TEMPLATE -->
                 <div class="page" id="page-template">
-                    <h2 class="page-title">Шаблон письма</h2>
-                    <p class="page-desc">Выберите готовый или создайте свой</p>
+                    <div class="flex-between mb-24">
+                        <div>
+                            <h2 class="page-title">Шаблон письма</h2>
+                            <p class="page-desc" style="margin-bottom:0;">Выберите готовый или создайте свой</p>
+                        </div>
+                        <div id="template-account-info" style="display:none;">
+                            <div class="badge" style="border-color:var(--primary);"><svg class="ico" style="width:12px;height:12px;margin-right:4px;opacity:0.5;"><use href="#ico-pencil"/></svg>Для: <span id="template-account-email" style="font-weight:700;margin-left:2px;"></span></div>
+                        </div>
+                    </div>
 
-                    <div class="card mb-16">
-                        <div class="card-title">Готовые шаблоны</div>
+                    <!-- Готовые шаблоны -->
+                    <div class="section">
+                        <div class="section-header">
+                            <svg class="ico"><use href="#ico-box"/></svg>
+                            <span class="section-title">Готовые шаблоны</span>
+                        </div>
                         <div class="tpl-grid" id="template-picker">
                             <div class="text-dim" style="grid-column:1/-1; text-align:center; padding:20px;">Загрузка...</div>
-                    </div>
+                        </div>
                     </div>
 
-                    <div class="card mb-16" id="template-account-info" style="display:none; border-color:var(--primary);">
-                        <div class="tag">Редактируется для</div>
-                        <div style="font-size:16px; font-weight:700; margin-top:4px;" id="template-account-email"></div>
-                    </div>
-
-                    <div class="card">
-                        <div class="form-group">
-                            <label class="form-label">Имя отправителя</label>
-                            <input type="text" id="template-sender-name" placeholder="Poshmark, Depop, eBay..." autocomplete="off">
-                            <div class="text-dim" style="font-size:11px; margin-top:4px;">Это имя будет отображаться как отправитель письма (From: Poshmark)</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Тема письма</label>
-                            <input type="text" id="template-subject" placeholder="[Your item sold!|Congrats on your sale!]" autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <div class="flex-between" style="margin-bottom:8px;">
-                                <label class="form-label" style="margin-bottom:0;">HTML содержимое</label>
-                                <div class="flex gap-8">
-                                    <button class="btn btn-ghost template-editor-tab active" data-mode="code" onclick="toggleTemplateEditor('code')" style="padding:5px 12px; font-size:11px;"><svg class="ico" style="margin-right:4px;"><use href="#ico-code"/></svg>Код</button>
-                                    <button class="btn btn-ghost template-editor-tab" data-mode="preview" onclick="toggleTemplateEditor('preview')" style="padding:5px 12px; font-size:11px;"><svg class="ico" style="margin-right:4px;"><use href="#ico-eye"/></svg>Превью</button>
+                    <!-- Отправитель + Тема | Переменные — side by side -->
+                    <div class="grid-2" style="gap:24px; align-items:start;">
+                        <!-- Left: Отправитель и тема -->
+                        <div class="section" style="margin-bottom:0;">
+                            <div class="section-header">
+                                <svg class="ico"><use href="#ico-mail"/></svg>
+                                <span class="section-title">Отправитель и тема</span>
+                            </div>
+                            <div class="card">
+                                <div class="form-group">
+                                    <label class="form-label">Имя отправителя</label>
+                                    <input type="text" id="template-sender-name" placeholder="Poshmark, Depop, eBay..." autocomplete="off">
+                                    <div class="text-dim" style="font-size:11px; margin-top:4px;">Отображается в поле «От кого» (From)</div>
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="form-label">Тема письма</label>
+                                    <input type="text" id="template-subject" placeholder="[Your item just sold!|Congrats on your sale!|Great news about your listing]" autocomplete="off">
+                                    <div class="text-dim" style="font-size:11px; margin-top:4px;">Поддерживает спинтакс: [вариант1|вариант2]</div>
                                 </div>
                             </div>
-                            <textarea id="template-content" placeholder="HTML-код письма..." style="min-height:350px; font-family:'SF Mono','Fira Code',monospace; font-size:12px;"></textarea>
-                            <iframe id="template-live-preview" style="display:none; width:100%; min-height:350px; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff;" sandbox="allow-same-origin"></iframe>
+                        </div>
+                        <!-- Right: Переменные -->
+                        <div class="section" style="margin-bottom:0;">
+                            <div class="section-header">
+                                <svg class="ico"><use href="#ico-dice"/></svg>
+                                <span class="section-title">Переменные шаблона</span>
+                            </div>
+                            <div class="card">
+                                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+                                    <span class="code">{email}</span>
+                                    <span class="code">{username}</span>
+                                    <span class="code">{first_name}</span>
+                                    <span class="code">{last_name}</span>
+                                    <span class="code">{order_id}</span>
+                                    <span class="code">{date}</span>
+                                    <span class="code">{time}</span>
+                                    <span class="code">{random_price}</span>
+                                    <span class="code">{tracking_number}</span>
+                                    <span class="code">{item_name}</span>
+                                    <span class="code" style="background:rgba(94,196,176,0.12) !important; color:var(--success) !important; border:1px solid rgba(94,196,176,0.2);">{redirect}</span>
+                                </div>
+                                <div class="info-strip" style="margin:0;">
+                                    <svg class="ico"><use href="#ico-info"/></svg>
+                                    <span>Подставятся <b>рандомно</b> при отправке. <span style="color:var(--success);">{redirect}</span> — твоя ссылка.</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                        <div class="card" style="background:rgba(37,99,235,0.04); border-color:rgba(59,130,246,0.12); padding:16px 20px; margin-bottom:16px;">
-                            <div class="flex-between" style="margin-bottom:12px;">
-                                <span class="tag">Переменные шаблона</span>
-                                <button class="btn btn-ghost" onclick="randomizeAndPreview()" style="padding:5px 12px; font-size:11px; gap:4px;"><svg class="ico" style="margin-right:4px;"><use href="#ico-dice"/></svg>Рандом-превью</button>
-                            </div>
-                            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
-                                <span class="code">{email}</span>
-                                <span class="code">{username}</span>
-                                <span class="code">{first_name}</span>
-                                <span class="code">{last_name}</span>
-                                <span class="code">{order_id}</span>
-                                <span class="code">{date}</span>
-                                <span class="code">{time}</span>
-                                <span class="code">{random_price}</span>
-                                <span class="code">{tracking_number}</span>
-                                <span class="code">{item_name}</span>
-                                <span class="code" style="background:rgba(48,209,88,0.12) !important; color:#30d158 !important; border:1px solid rgba(48,209,88,0.2);">{redirect}</span>
-                            </div>
-                            <div style="font-size:11px; color:var(--text-tertiary); line-height:1.6;">
-                                <svg class="ico" style="width:14px;height:14px;color:#60a5fa;vertical-align:-0.2em;"><use href="#ico-info"/></svg>
-                                Вставь эти переменные в HTML-шаблон. При отправке все подставятся <b>рандомно</b> для каждого батча.<br>
-                                <span style="color:#30d158;">{redirect}</span> — твоя постоянная ссылка (задаётся на вкладке Отправка).
+
+                    <!-- Редактор HTML -->
+                    <div class="section">
+                        <div class="section-header">
+                            <svg class="ico"><use href="#ico-code"/></svg>
+                            <span class="section-title">HTML содержимое</span>
+                            <div style="flex:1;"></div>
+                            <div class="flex gap-8">
+                                <button class="btn btn-ghost template-editor-tab active" data-mode="code" onclick="toggleTemplateEditor('code')" style="padding:5px 12px; font-size:11px;"><svg class="ico" style="margin-right:4px;"><use href="#ico-code"/></svg>Код</button>
+                                <button class="btn btn-ghost template-editor-tab" data-mode="preview" onclick="toggleTemplateEditor('preview')" style="padding:5px 12px; font-size:11px;"><svg class="ico" style="margin-right:4px;"><use href="#ico-eye"/></svg>Превью</button>
                             </div>
                         </div>
-                        <!-- Hidden inputs for preview compatibility -->
-                        <div style="display:none;">
-                            <input id="tpl-var-email" value="user@example.com">
-                            <input id="tpl-var-username" value="JohnDoe">
-                            <input id="tpl-var-order-id" value="78432156">
-                            <input id="tpl-var-redirect" value="https://example.com/confirm">
-                            <input id="tpl-var-date" value="Feb 09, 2026">
-                            <input id="tpl-var-time" value="14:32">
-                            <input id="tpl-var-random-price" value="$49.99">
-                            <input id="tpl-var-tracking-number" value="1Z999AA10123456784">
-                            <input id="tpl-var-item-name" value="Vintage Nike Windbreaker">
+                        <textarea id="template-content" placeholder="<!DOCTYPE html>&#10;<html>&#10;  <!-- Вставьте HTML вашего письма здесь -->&#10;  <!-- Поддерживаются переменные: {{name}}, {{price}}, {{item}} -->&#10;  <!-- Спинтакс: {Вариант 1|Вариант 2|Вариант 3} -->&#10;</html>" style="min-height:320px; font-family:'SF Mono','Fira Code',monospace; font-size:12px;"></textarea>
+                        <div id="template-inline-preview" class="preview-panel">
+                            <div class="preview-panel-header">
+                                <span>Предпросмотр шаблона</span>
+                                <div class="preview-panel-actions">
+                                    <button onclick="randomizeInlinePreview()"><svg class="ico" style="width:12px;height:12px;margin-right:3px;"><use href="#ico-dice"/></svg>Рандом</button>
+                                    <button onclick="openPreviewFullscreen()"><svg class="ico" style="width:12px;height:12px;margin-right:3px;"><use href="#ico-eye"/></svg>На весь экран</button>
+                                </div>
+                            </div>
+                            <div class="preview-panel-body collapsed" id="preview-panel-body">
+                                <div class="preview-panel-content" id="preview-panel-content"></div>
+                            </div>
+                            <div class="preview-expand-bar" id="preview-expand-bar" onclick="togglePreviewExpand()">
+                                <span><span class="expand-arrow">▼</span> Развернуть полностью</span>
+                            </div>
                         </div>
-                        <div class="flex gap-8" style="flex-wrap:wrap;">
+                        <!-- Actions integrated below editor -->
+                        <div class="action-bar" style="margin-top:16px;">
                             <button class="btn btn-primary" onclick="setTemplateToCurrentAccount()"><svg class="ico" style="margin-right:6px;"><use href="#ico-save"/></svg>Сохранить</button>
                             <button class="btn btn-ghost" onclick="setTemplateToAllAccounts()">Применить ко всем</button>
+                            <div class="action-bar-spacer"></div>
                             <button class="btn btn-accent" onclick="randomizeAndPreview()"><svg class="ico" style="margin-right:6px;"><use href="#ico-dice"/></svg>Рандом-превью</button>
                             <button class="btn btn-danger" onclick="clearTemplate()"><svg class="ico" style="margin-right:6px;"><use href="#ico-trash"/></svg>Очистить</button>
+                        </div>
                     </div>
+
+                    <!-- Hidden inputs for preview compatibility -->
+                    <div style="display:none;">
+                        <input id="tpl-var-email" value="user@example.com">
+                        <input id="tpl-var-username" value="JohnDoe">
+                        <input id="tpl-var-order-id" value="78432156">
+                        <input id="tpl-var-redirect" value="https://example.com/confirm">
+                        <input id="tpl-var-date" value="Feb 09, 2026">
+                        <input id="tpl-var-time" value="14:32">
+                        <input id="tpl-var-random-price" value="$49.99">
+                        <input id="tpl-var-tracking-number" value="1Z999AA10123456784">
+                        <input id="tpl-var-item-name" value="Vintage Nike Windbreaker">
                     </div>
                 </div>
 
@@ -1081,86 +1676,151 @@
                     <h2 class="page-title">Настройки</h2>
                     <p class="page-desc">Конфигурация движка рассылки</p>
 
-                    <div class="grid-2 mb-16" style="overflow:visible;">
-                        <div class="card" style="overflow:visible; position:relative; z-index:10;">
-                            <div class="card-title">Формат Order ID</div>
-                                    <input type="hidden" id="setting-order-type" value="digits">
-                            <div class="custom-select" id="select-order-type">
-                                <div class="custom-select-trigger" onclick="toggleSelect('select-order-type')">
-                                    <span class="select-label">Только цифры</span>
-                                    <svg class="arrow" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                                </div>
-                                <div class="custom-select-dropdown">
-                                    <div class="custom-select-option selected" data-value="digits" onclick="pickOption('select-order-type','digits','Только цифры')">Только цифры</div>
-                                    <div class="custom-select-option" data-value="letters" onclick="pickOption('select-order-type','letters','Только буквы')">Только буквы</div>
-                                    <div class="custom-select-option" data-value="mixed" onclick="pickOption('select-order-type','mixed','Смешанный')">Смешанный</div>
+                    <!-- Row 1: Авторизация + Автоконфигурация side by side -->
+                    <div class="grid-2" style="gap:24px; align-items:start;">
+                        <!-- Авторизация -->
+                        <div class="section" style="margin-bottom:0;">
+                            <div class="section-header">
+                                <svg class="ico"><use href="#ico-shield"/></svg>
+                                <span class="section-title">Авторизация</span>
+                            </div>
+                            <div class="card">
+                                <div class="form-group"><label class="form-label"><svg class="ico" style="margin-right:4px; vertical-align:-0.35em;"><use href="#ico-zap"/></svg>Session ID</label><input type="text" id="engine-session-id" placeholder="X-Session-ID из DevTools → Network" autocomplete="off"></div>
+                                <div class="form-group"><label class="form-label"><svg class="ico" style="margin-right:4px; vertical-align:-0.35em;"><use href="#ico-zap"/></svg>XSRF Token</label><input type="text" id="engine-xsrf-token" placeholder="X-XSRF-TOKEN из DevTools → Network" autocomplete="off"></div>
+                                <div class="form-group" style="margin-bottom:0;"><label class="form-label"><svg class="ico" style="margin-right:4px; vertical-align:-0.35em;"><use href="#ico-zap"/></svg>Designer Cookie <span class="label-hint">wfdesignersession</span></label><input type="text" id="engine-designer-session" placeholder="wfdesignersession из DevTools → Cookies" autocomplete="off"></div>
+                                <div style="margin-top:14px; display:flex; align-items:center; gap:12px;">
+                                    <button class="btn btn-primary" onclick="saveAuthSection()" id="btn-save-auth" style="flex-shrink:0;">
+                                        <svg class="ico" style="margin-right:6px;"><use href="#ico-check"/></svg>Сохранить
+                                    </button>
+                                    <span id="auth-save-status" style="font-size:11px; color:var(--text-tertiary); transition:opacity 0.3s;"></span>
                                 </div>
                             </div>
+                        </div>
+                        <!-- Автоконфигурация -->
+                        <div class="section" style="margin-bottom:0;">
+                            <div class="section-header">
+                                <svg class="ico"><use href="#ico-link"/></svg>
+                                <span class="section-title">Автоконфигурация</span>
+                            </div>
+                            <div class="card" style="padding:20px;">
+                                <div style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.6;">
+                                    Вставьте ссылку на опубликованный сайт — Site ID, Page ID, Element ID и API-адреса заполнятся из кода страницы.
+                                </div>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <input type="text" id="url-parse-input"
+                                           placeholder="https://your-site.webflow.io"
+                                           autocomplete="off" style="flex:1;">
+                                    <button class="btn btn-primary" onclick="parseWebflowUrl()" id="btn-parse-url" style="flex-shrink:0; white-space:nowrap;">
+                                        <svg class="ico" style="margin-right:6px;"><use href="#ico-zap"/></svg>Распознать
+                                    </button>
+                                </div>
+                                <div id="url-parse-status" style="display:none; margin-top:12px; padding:10px 14px; border-radius:var(--radius-sm); font-size:12px; line-height:1.6;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Параметры рассылки (Order ID + Delay + Batches + Notifications) -->
+                    <div class="section">
+                        <div class="section-header">
+                            <svg class="ico"><use href="#ico-gear"/></svg>
+                            <span class="section-title">Параметры рассылки</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; overflow:visible;">
+                            <div class="card" style="overflow:visible; position:relative; z-index:10;">
+                                <div class="card-title">Формат Order ID</div>
+                                <input type="hidden" id="setting-order-type" value="digits">
+                                <div class="custom-select" id="select-order-type">
+                                    <div class="custom-select-trigger" onclick="toggleSelect('select-order-type')">
+                                        <span class="select-label">Только цифры</span>
+                                        <svg class="arrow" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                    </div>
+                                    <div class="custom-select-dropdown">
+                                        <div class="custom-select-option selected" data-value="digits" onclick="pickOption('select-order-type','digits','Только цифры')">Только цифры</div>
+                                        <div class="custom-select-option" data-value="letters" onclick="pickOption('select-order-type','letters','Только буквы')">Только буквы</div>
+                                        <div class="custom-select-option" data-value="mixed" onclick="pickOption('select-order-type','mixed','Смешанный')">Смешанный</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                                    <div class="card-title" style="margin-bottom:0;">Задержка анти-спама</div>
+                                    <button class="btn btn-ghost" style="padding:4px 10px; font-size:10px;" onclick="document.getElementById('setting-delay-min').value=2;document.getElementById('setting-delay-max').value=5;showToast('Задержка сброшена','info');" title="Сбросить к значениям по умолчанию"><svg class="ico" style="width:12px;height:12px;margin-right:4px;"><use href="#ico-refresh"/></svg>Сброс</button>
+                                </div>
+                                <div class="grid-2">
+                                    <div>
+                                        <div class="tag" style="margin-bottom:8px;">Мин (сек)</div>
+                                        <div class="stepper">
+                                            <button class="stepper-btn" onclick="stepValue('setting-delay-min',-1,1,300)">−</button>
+                                            <input type="number" id="setting-delay-min" value="2" min="1" max="300" autocomplete="off">
+                                            <button class="stepper-btn" onclick="stepValue('setting-delay-min',1,1,300)">+</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="tag" style="margin-bottom:8px;">Макс (сек)</div>
+                                        <div class="stepper">
+                                            <button class="stepper-btn" onclick="stepValue('setting-delay-max',-1,1,300)">−</button>
+                                            <input type="number" id="setting-delay-max" value="5" min="1" max="300" autocomplete="off">
+                                            <button class="stepper-btn" onclick="stepValue('setting-delay-max',1,1,300)">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                                    <div class="card-title" style="margin-bottom:0;">Батчи</div>
+                                    <button class="btn btn-ghost" style="padding:4px 10px; font-size:10px;" onclick="document.getElementById('engine-batch-size').value=5;document.getElementById('engine-batch-delay').value=3.5;showToast('Батчи сброшены','info');" title="Сбросить к значениям по умолчанию"><svg class="ico" style="width:12px;height:12px;margin-right:4px;"><use href="#ico-refresh"/></svg>Сброс</button>
+                                </div>
+                                <div class="grid-2">
+                                    <div class="form-group" style="margin-bottom:0;">
+                                        <label class="form-label">Размер <span class="label-hint">5–10</span></label>
+                                        <div class="stepper">
+                                            <button class="stepper-btn" onclick="stepValue('engine-batch-size',-1,5,10)">−</button>
+                                            <input type="number" id="engine-batch-size" value="5" min="5" max="10" autocomplete="off">
+                                            <button class="stepper-btn" onclick="stepValue('engine-batch-size',1,5,10)">+</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:0;">
+                                        <label class="form-label">Задержка (сек) <span class="label-hint">3–5</span></label>
+                                        <div class="stepper">
+                                            <button class="stepper-btn" onclick="stepValue('engine-batch-delay',-0.5,3,5)">−</button>
+                                            <input type="number" id="engine-batch-delay" value="3.5" min="3" max="5" step="0.5" autocomplete="off">
+                                            <button class="stepper-btn" onclick="stepValue('engine-batch-delay',0.5,3,5)">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div class="card-title" style="margin-bottom:6px;">Уведомления</div>
+                                    <div style="font-size:11px; color:var(--text-tertiary);">Звук при завершении и ошибках</div>
+                                </div>
+                                <button class="btn btn-accent" onclick="toggleSoundNotifications()" id="btn-notifications" style="flex-shrink:0;"><svg class="ico" style="margin-right:6px;"><use href="#ico-bell"/></svg><span id="btn-notifications-text">Включены</span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Конфигурация сайта (compact) -->
+                    <div class="section" id="section-site-config">
+                        <div class="section-header">
+                            <svg class="ico"><use href="#ico-globe"/></svg>
+                            <span class="section-title">Конфигурация сайта</span>
+                            <div style="flex:1;"></div>
+                            <span style="font-size:10px; color:var(--text-tertiary);">заполняется автоматически</span>
                         </div>
                         <div class="card">
-                            <div class="card-title">Задержка анти-спама</div>
-                            <div style="display:inline-block; font-size:10px; color:#93c5fd; background:rgba(37,99,235,0.12); border:1px solid rgba(59,130,246,0.2); padding:4px 12px; border-radius:100px; margin-bottom:12px;">Мин 2–3 сек, макс 5–8 сек</div>
-                            <div class="grid-2">
-                                <div>
-                                    <div class="tag" style="margin-bottom:8px;">Мин (сек)</div>
-                                    <div class="stepper">
-                                        <button class="stepper-btn" onclick="stepValue('setting-delay-min',-1,1,300)">−</button>
-                                        <input type="number" id="setting-delay-min" value="2" min="1" max="300" autocomplete="off">
-                                        <button class="stepper-btn" onclick="stepValue('setting-delay-min',1,1,300)">+</button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="tag" style="margin-bottom:8px;">Макс (сек)</div>
-                                    <div class="stepper">
-                                        <button class="stepper-btn" onclick="stepValue('setting-delay-max',-1,1,300)">−</button>
-                                        <input type="number" id="setting-delay-max" value="5" min="1" max="300" autocomplete="off">
-                                        <button class="stepper-btn" onclick="stepValue('setting-delay-max',1,1,300)">+</button>
-                                    </div>
-                                </div>
+                            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px 16px;">
+                                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Site ID</label><input type="text" id="engine-site-id" autocomplete="off"></div>
+                                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Element ID</label><input type="text" id="engine-element-id" autocomplete="off"></div>
+                                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Page ID</label><input type="text" id="engine-page-id" autocomplete="off"></div>
+                                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Имя сайта</label><input type="text" id="engine-site-name" autocomplete="off"></div>
+                                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Домен</label><input type="text" id="engine-domain" autocomplete="off"></div>
+                                <div class="form-group" style="margin-bottom:0;"><label class="form-label">Имя отправителя</label><input type="text" id="engine-sender-name" autocomplete="off"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card mb-16" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div class="card-title" style="margin-bottom:6px;">Уведомления</div>
-                            <div style="font-size:11px; color:var(--text-tertiary);">Звук при завершении рассылки, ошибках и остановке</div>
-                        </div>
-                        <button class="btn btn-accent" onclick="toggleSoundNotifications()" id="btn-notifications" style="flex-shrink:0;"><svg class="ico" style="margin-right:6px;"><use href="#ico-bell"/></svg><span id="btn-notifications-text">Включены</span></button>
-                    </div>
-
-                    <div class="card">
-                        <div class="flex-between mb-16">
-                            <div class="card-title" style="margin-bottom:0;">Двигатель (config.json)</div>
-                            <button class="btn btn-primary" onclick="saveAllSettings()"><svg class="ico" style="margin-right:6px;"><use href="#ico-save"/></svg>Сохранить всё</button>
-                        </div>
-                        <div class="grid-2">
-                            <div class="form-group"><label class="form-label"><svg class="ico" style="margin-right:4px; vertical-align:-0.35em;"><use href="#ico-zap"/></svg>Session ID</label><input type="text" id="engine-session-id" placeholder="x-session-id из DevTools" autocomplete="off"></div>
-                            <div class="form-group"><label class="form-label"><svg class="ico" style="margin-right:4px; vertical-align:-0.35em;"><use href="#ico-zap"/></svg>XSRF Token</label><input type="text" id="engine-xsrf-token" placeholder="x-xsrf-token из DevTools" autocomplete="off"></div>
-                            <div class="form-group" style="grid-column:1/-1;"><label class="form-label"><svg class="ico" style="margin-right:4px; vertical-align:-0.35em;"><use href="#ico-zap"/></svg>Designer Session Cookie <span style="font-weight:500; text-transform:none; color:#93c5fd; background:rgba(37,99,235,0.12); border:1px solid rgba(59,130,246,0.2); padding:2px 8px; border-radius:100px; font-size:9px; margin-left:4px;">Cookie → wfdesignersession</span></label><input type="text" id="engine-designer-session" placeholder="wfdesignersession из Cookie (DevTools → Application → Cookies)" autocomplete="off" style="font-size:11px;"></div>
-                            <div class="form-group"><label class="form-label">Site ID</label><input type="text" id="engine-site-id" autocomplete="off"></div>
-                            <div class="form-group"><label class="form-label">Element ID</label><input type="text" id="engine-element-id" autocomplete="off"></div>
-                            <div class="form-group"><label class="form-label">Page ID</label><input type="text" id="engine-page-id" autocomplete="off"></div>
-                            <div class="form-group"><label class="form-label">Имя сайта</label><input type="text" id="engine-site-name" autocomplete="off"></div>
-                            <div class="form-group"><label class="form-label">Домен</label><input type="text" id="engine-domain" autocomplete="off"></div>
-                            <div class="form-group"><label class="form-label">Имя отправителя</label><input type="text" id="engine-sender-name" autocomplete="off"></div>
-                            <div class="form-group">
-                                <label class="form-label">Размер батча <span style="font-weight:500; text-transform:none; color:#93c5fd; background:rgba(37,99,235,0.12); border:1px solid rgba(59,130,246,0.2); padding:2px 8px; border-radius:100px; font-size:9px; margin-left:4px;">5–10</span></label>
-                                <div class="stepper">
-                                    <button class="stepper-btn" onclick="stepValue('engine-batch-size',-1,1,50)">−</button>
-                                    <input type="number" id="engine-batch-size" value="5" min="1" max="50" autocomplete="off">
-                                    <button class="stepper-btn" onclick="stepValue('engine-batch-size',1,1,50)">+</button>
-                            </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Задержка батчей (сек) <span style="font-weight:500; text-transform:none; color:#93c5fd; background:rgba(37,99,235,0.12); border:1px solid rgba(59,130,246,0.2); padding:2px 8px; border-radius:100px; font-size:9px; margin-left:4px;">3–5</span></label>
-                                <div class="stepper">
-                                    <button class="stepper-btn" onclick="stepValue('engine-batch-delay',-0.5,0,60)">−</button>
-                                    <input type="number" id="engine-batch-delay" value="3.5" min="0" max="60" step="0.5" autocomplete="off">
-                                    <button class="stepper-btn" onclick="stepValue('engine-batch-delay',0.5,0,60)">+</button>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="action-bar">
+                        <button class="btn btn-primary" onclick="saveAllSettings()"><svg class="ico" style="margin-right:6px;"><use href="#ico-save"/></svg>Сохранить всё</button>
                     </div>
                 </div>
 
@@ -1169,155 +1829,190 @@
                     <h2 class="page-title">Отправка</h2>
                     <p class="page-desc">Запуск и мониторинг рассылки</p>
 
-                    <div class="card mb-16" id="send-account-info" style="display:none; border-color:var(--primary);">
-                        <div class="flex-between">
-                            <div>
-                                <div class="tag">Активный аккаунт</div>
-                                <div style="font-size:16px; font-weight:700; margin-top:4px;" id="send-account-name">—</div>
-                    </div>
-                            <svg class="ico" style="width:24px; height:24px; opacity:0.3;"><use href="#ico-globe"/></svg>
+                    <!-- Active account strip -->
+                    <div id="send-account-info" style="display:none; margin-bottom:20px;">
+                        <div class="send-account-strip">
+                            <div class="send-account-strip-dot"></div>
+                            <span class="tag" style="margin-right:6px;">Аккаунт:</span>
+                            <span id="send-account-name" style="font-size:13px; font-weight:700; color:var(--text);">—</span>
+                            <div style="flex:1;"></div>
+                            <svg class="ico" style="width:16px;height:16px;opacity:0.3;"><use href="#ico-globe"/></svg>
                         </div>
                     </div>
 
-                    <div class="grid-2" style="align-items:start;">
-                        <div>
-                            <div class="card">
-                                <div class="card-title">Режим</div>
+                    <!-- Main send grid: left 58% / right 42% -->
+                    <div class="send-grid">
+
+                        <!-- ── LEFT COLUMN ─────────────────────── -->
+                        <div class="send-col-left">
+
+                            <!-- Mode selector -->
+                            <div class="section">
+                                <div class="section-header">
+                                    <svg class="ico"><use href="#ico-zap"/></svg>
+                                    <span class="section-title">Режим отправки</span>
+                                </div>
                                 <div class="mode-group">
                                     <button class="mode-opt liquid-glass-btn active" data-mode="1" onclick="selectMode(this)">
-                                        <span><div class="mode-title"><svg class="ico" style="margin-right:6px;"><use href="#ico-zap"/></svg>Режим 1</div>
-                                        <div class="mode-sub">Быстрая отправка</div></span>
+                                        <div class="mode-title"><svg class="ico" style="margin-right:6px;"><use href="#ico-zap"/></svg>Режим 1</div>
+                                        <div class="mode-sub">Быстрая отправка</div>
                                     </button>
                                     <button class="mode-opt liquid-glass-btn" data-mode="2" onclick="selectMode(this)">
-                                        <span><div class="mode-title"><svg class="ico" style="margin-right:6px;"><use href="#ico-fire"/></svg>Режим 2</div>
-                                        <div class="mode-sub">Inbox Warming</div></span>
+                                        <div class="mode-title"><svg class="ico" style="margin-right:6px;"><use href="#ico-fire"/></svg>Режим 2</div>
+                                        <div class="mode-sub">Отправка с прогревом</div>
                                     </button>
-                            </div>
+                                </div>
                                 <input type="hidden" id="send-mode" value="1">
                             </div>
 
-                            <div class="card">
-                                <div class="card-title">Получатели</div>
-                                <div id="drop-zone" style="position:relative;">
-                                    <textarea id="emails-input" placeholder="email@example.com&#10;another@mail.com&#10;&#10;Или перетащите .txt файл сюда..." style="min-height:200px;"></textarea>
-                                    <div id="drop-overlay" style="display:none; position:absolute; inset:0; background:rgba(59,130,246,0.12); border:2px dashed var(--primary); border-radius:var(--radius-sm); z-index:5; pointer-events:none; align-items:center; justify-content:center;">
-                                        <div style="text-align:center; color:var(--primary); font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; gap:8px;"><svg class="ico" style="width:20px;height:20px;"><use href="#ico-download"/></svg>Отпустите файл здесь</div>
-                                    </div>
+                            <!-- Email list -->
+                            <div class="section">
+                                <div class="section-header">
+                                    <svg class="ico"><use href="#ico-mail"/></svg>
+                                    <span class="section-title">Получатели</span>
+                                    <div style="flex:1;"></div>
+                                    <span class="tag">Найдено: <span id="emails-count" style="color:var(--text); font-weight:700;">0</span></span>
                                 </div>
-                                <div class="flex-between" style="margin-top:12px;">
-                                    <span class="tag">Найдено: <span id="emails-count" style="color:var(--text);">0</span></span>
-                                    <label class="btn btn-ghost" style="padding:6px 12px; font-size:11px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"><svg class="ico" style="width:16px;height:16px;"><use href="#ico-folder"/></svg>.txt<input type="file" accept=".txt" style="display:none;" onchange="loadEmailsFromFile(event)"></label>
-                                </div>
-                                </div>
-
-                            <!-- TIMER BLOCK -->
-                            <div class="card timer-block liquid-glass" id="timer-card">
-                                <div class="timer-inner">
-                                    <div class="timer-header">
-                                        <div class="timer-icon-wrap">
-                                            <span class="timer-icon" id="timer-icon"><svg class="ico"><use href="#ico-timer"/></svg></span>
-                                        </div>
-                                        <div class="timer-label" id="timer-label">Время отправки</div>
-                                    </div>
-                                    <div class="timer-display" id="timer-display">00:00:00</div>
-                                    <div class="timer-sub-row">
-                                        <div class="timer-sub-item">
-                                            <span class="timer-sub-label">Скорость</span>
-                                            <span class="timer-sub-value" id="timer-speed">—</span>
-                                        </div>
-                                        <div class="timer-sub-divider"></div>
-                                        <div class="timer-sub-item">
-                                            <span class="timer-sub-label">Осталось</span>
-                                            <span class="timer-sub-value" id="timer-eta">—</span>
+                                <div class="card" style="padding:16px;">
+                                    <div id="drop-zone" style="position:relative;">
+                                        <textarea id="emails-input" placeholder="john.doe@gmail.com&#10;sarah.smith@yahoo.com&#10;mike.jones@outlook.com&#10;&#10;По одному адресу на строку или перетащите .txt файл" style="min-height:200px;"></textarea>
+                                        <div id="drop-overlay" style="display:none; position:absolute; inset:0; background:rgba(232,145,90,0.1); border:2px dashed var(--primary); border-radius:var(--radius-sm); z-index:5; pointer-events:none; align-items:center; justify-content:center;">
+                                            <div style="text-align:center; color:var(--primary); font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px;"><svg class="ico" style="width:20px;height:20px;"><use href="#ico-download"/></svg>Отпустите файл здесь</div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="timer-glow" id="timer-glow"></div>
-                            </div>
-
-                            <div class="card">
-                                <div class="flex-between"><span class="tag">Прогресс</span><span id="progress-percent" style="font-weight:800; color:var(--primary);">0%</span></div>
-                                <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-                                <div class="flex-between" style="font-size:13px;"><span id="progress-text" class="text-dim">0 / 0</span></div>
-                                <div class="grid-2" style="margin-top:12px;">
-                                    <div style="text-align:center; padding:8px; background:rgba(48,209,88,0.06); border-radius:var(--radius-sm); border:1px solid rgba(48,209,88,0.1);">
-                                        <div class="tag" style="font-size:9px;">Успех</div>
-                                        <div id="send-success" style="font-weight:800; color:var(--success);">0</div>
-                                    </div>
-                                    <div style="text-align:center; padding:8px; background:rgba(255,69,58,0.06); border-radius:var(--radius-sm); border:1px solid rgba(255,69,58,0.1);">
-                                        <div class="tag" style="font-size:9px;">Ошибки</div>
-                                        <div id="send-errors" style="font-weight:800; color:var(--danger);">0</div>
+                                    <div style="margin-top:10px; display:flex; justify-content:flex-end;">
+                                        <label class="btn btn-ghost" style="padding:6px 14px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+                                            <svg class="ico" style="width:15px;height:15px;"><use href="#ico-folder"/></svg>Загрузить .txt
+                                            <input type="file" accept=".txt" style="display:none;" onchange="loadEmailsFromFile(event)">
+                                        </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="card" style="border-color:rgba(59,130,246,0.2); background:rgba(37,99,235,0.04);">
-                                <div class="card-title" style="margin-bottom:10px;"><svg class="ico" style="margin-right:6px;"><use href="#ico-link"/></svg>Твоя ссылка</div>
-                                <input type="text" id="send-redirect-url" placeholder="https://your-link.com/page" autocomplete="off" style="font-size:13px;">
-                                <div style="margin-top:8px; font-size:10px; color:var(--text-tertiary);">
-                                    Вставь ссылку → нажми Запустить. Всё остальное (имя, цена, трекинг, товар) — рандом автоматически.
+                            <!-- Redirect URL + Launch -->
+                            <div class="section">
+                                <div class="section-header">
+                                    <svg class="ico"><use href="#ico-link"/></svg>
+                                    <span class="section-title">Ссылка и запуск</span>
+                                </div>
+                                <div class="card" style="padding:16px;">
+                                    <div class="form-group" style="margin-bottom:12px;">
+                                        <label class="form-label">Redirect URL</label>
+                                        <input type="text" id="send-redirect-url" placeholder="https://poshmark.com/listing/nike-air-max-abc123" autocomplete="off">
+                                        <div style="margin-top:6px; font-size:11px; color:var(--text-tertiary);">Имя, цена, трекинг, товар — генерируется автоматически.</div>
+                                    </div>
+                                    <div class="flex gap-8">
+                                        <button class="btn btn-primary btn-lg" style="flex:1;" onclick="startSending()" id="btn-start">
+                                            <svg class="ico" style="margin-right:8px;"><use href="#ico-send"/></svg>Запустить
+                                        </button>
+                                        <button class="btn btn-danger btn-lg" style="flex:1; display:none;" onclick="stopSending()" id="btn-stop">
+                                            <svg class="ico" style="margin-right:8px;"><use href="#ico-pause"/></svg>Остановить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ── RIGHT COLUMN ────────────────────── -->
+                        <div class="send-col-right">
+
+                            <!-- Timer -->
+                            <div class="section">
+                                <div class="section-header">
+                                    <svg class="ico"><use href="#ico-timer"/></svg>
+                                    <span class="section-title">Прогресс</span>
+                                </div>
+                                <div class="card timer-block liquid-glass mb-8" id="timer-card">
+                                    <div class="timer-inner">
+                                        <div class="timer-header">
+                                            <div class="timer-icon-wrap">
+                                                <span class="timer-icon" id="timer-icon"><svg class="ico"><use href="#ico-timer"/></svg></span>
+                                            </div>
+                                            <div class="timer-label" id="timer-label">Время отправки</div>
+                                        </div>
+                                        <div class="timer-display" id="timer-display">00:00:00</div>
+                                        <div class="timer-sub-row">
+                                            <div class="timer-sub-item">
+                                                <span class="timer-sub-label">Скорость</span>
+                                                <span class="timer-sub-value" id="timer-speed">—</span>
+                                            </div>
+                                            <div class="timer-sub-divider"></div>
+                                            <div class="timer-sub-item">
+                                                <span class="timer-sub-label">Осталось</span>
+                                                <span class="timer-sub-value" id="timer-eta">—</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="timer-glow" id="timer-glow"></div>
+                                </div>
+                                <div class="card mb-0">
+                                    <div class="flex-between" style="margin-bottom:8px;">
+                                        <span class="tag">Прогресс</span>
+                                        <span id="progress-percent" style="font-weight:800; color:var(--primary);">0%</span>
+                                    </div>
+                                    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+                                    <div class="flex-between" style="margin-top:6px;"><span id="progress-text" class="text-dim" style="font-size:12px;">0 / 0</span></div>
+                                    <div class="grid-2" style="margin-top:14px; gap:10px;">
+                                        <div class="send-stat-box send-stat-success">
+                                            <div class="tag" style="font-size:9px; margin-bottom:4px;">Успех</div>
+                                            <div id="send-success" style="font-size:22px; font-weight:800; color:var(--success); line-height:1;">0</div>
+                                        </div>
+                                        <div class="send-stat-box send-stat-error">
+                                            <div class="tag" style="font-size:9px; margin-bottom:4px;">Ошибки</div>
+                                            <div id="send-errors" style="font-size:22px; font-weight:800; color:var(--danger); line-height:1;">0</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="flex gap-8">
-                                <button class="btn btn-primary btn-lg" style="flex:1;" onclick="startSending()" id="btn-start">Запустить</button>
-                                <button class="btn btn-danger btn-lg" style="flex:1; display:none;" onclick="stopSending()" id="btn-stop">Остановить</button>
-                        </div>
-                        </div>
+                            <!-- Logs -->
+                            <div class="section">
+                                <div class="section-header">
+                                    <svg class="ico"><use href="#ico-code"/></svg>
+                                    <span class="section-title">Логи</span>
+                                    <div style="flex:1;"></div>
+                                    <span style="font-size:10px; color:var(--text-tertiary);">макс. 100</span>
+                                </div>
+                                <div class="card" style="padding:0; overflow:hidden;">
+                                    <div class="log-box" id="logs-container" style="min-height:220px; max-height:320px; border:none; border-radius:0; padding:14px;">Логи появятся после запуска...</div>
+                                </div>
+                            </div>
 
-                        <div>
-                        <div class="card" style="height:480px; display:flex; flex-direction:column;">
-                            <div class="flex-between" style="margin-bottom:12px;"><div class="card-title" style="margin-bottom:0;">Логи</div><span style="font-size:10px; color:var(--text-tertiary);">макс. 100 записей</span></div>
-                            <div class="log-box" id="logs-container">Логи появятся после запуска...</div>
-                        </div>
+                            <!-- Error reference (compact) -->
+                            <div class="section">
+                                <div class="section-header send-errref-toggle" onclick="(function(btn){const b=btn.parentElement.querySelector('.send-errref-body');if(b.classList.contains('open')){b.classList.remove('open');}else{b.querySelectorAll('tr').forEach(r=>{r.style.animation='none';r.offsetHeight;r.style.animation='';});b.classList.add('open');setTimeout(()=>{const sc=document.querySelector('.main');if(sc){const r=b.getBoundingClientRect();const d=r.bottom-sc.getBoundingClientRect().bottom;if(d>0)sc.scrollBy({top:d+20,behavior:'smooth'});}},650);}})(this)" style="cursor:pointer; user-select:none;">
+                                    <svg class="ico"><use href="#ico-info"/></svg>
+                                    <span class="section-title">Справочник ошибок</span>
+                                    <div style="flex:1;"></div>
+                                    <svg class="ico send-errref-arrow" style="width:14px;height:14px; color:var(--text-tertiary); transition:transform 0.25s;"><use href="#ico-code"/></svg>
+                                </div>
+                                <div class="send-errref-body">
+                                    <div class="card" style="padding:14px;">
+                                        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                                            <thead>
+                                                <tr style="border-bottom:1px solid var(--border);">
+                                                    <th style="text-align:left; padding:5px 8px; color:var(--text-tertiary); font-weight:600; font-size:10px;">Код</th>
+                                                    <th style="text-align:left; padding:5px 8px; color:var(--text-tertiary); font-weight:600; font-size:10px;">Описание</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody style="color:var(--text-secondary);">
+                                                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;"><span class="code" style="font-size:10px;">FORM_UPD</span></td><td style="padding:4px 8px;">Ошибка обновления формы — проверьте session/xsrf токены</td></tr>
+                                                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;"><span class="code" style="font-size:10px;">AUTH_401</span></td><td style="padding:4px 8px;">Токен истёк — обновите session_id и xsrf_token</td></tr>
+                                                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;"><span class="code" style="font-size:10px;">AUTH_REDIRECT</span></td><td style="padding:4px 8px;">Сессия истекла — обновите cookies (wfdesignersession) для текущего сайта</td></tr>
+                                                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;"><span class="code" style="font-size:10px;">PUB_FAIL</span></td><td style="padding:4px 8px;">Ошибка публикации Webflow API</td></tr>
+                                                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;"><span class="code" style="font-size:10px;">PUB_TIME</span></td><td style="padding:4px 8px;">Таймаут публикации (>60с)</td></tr>
+                                                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;"><span class="code" style="font-size:10px;">TRIG_ERR</span></td><td style="padding:4px 8px;">Ошибка триггера формы — неверный домен/page_id/element_id</td></tr>
+                                                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;"><span class="code" style="font-size:10px;">NET_ERR</span></td><td style="padding:4px 8px;">Ошибка сети / прокси недоступен</td></tr>
+                                                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;"><span class="code" style="font-size:10px;">RATE_429</span></td><td style="padding:4px 8px;">Rate limit — авто-повтор через 15→30→60с</td></tr>
+                                                <tr><td style="padding:4px 8px;"><span class="code" style="font-size:10px;">STOP_USR</span></td><td style="padding:4px 8px;">Остановлено пользователем</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div class="card" style="padding:16px;">
-                            <div class="card-title" style="margin-bottom:12px;">Справочник ошибок</div>
-                            <table style="width:100%; border-collapse:collapse; font-size:11px;">
-                                <thead>
-                                    <tr style="border-bottom:1px solid var(--border);">
-                                        <th style="text-align:left; padding:6px 8px; color:var(--text-tertiary); font-weight:600;">Код</th>
-                                        <th style="text-align:left; padding:6px 8px; color:var(--text-tertiary); font-weight:600;">Описание</th>
-                                    </tr>
-                                </thead>
-                                <tbody style="color:var(--text-secondary);">
-                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">#FORM_UPD</span></td>
-                                        <td style="padding:5px 8px;">Ошибка обновления формы — невалидный session/xsrf</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">PUB_FAIL</span></td>
-                                        <td style="padding:5px 8px;">Публикация не удалась — проблема с API WebFlow</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">PUB_TIME</span></td>
-                                        <td style="padding:5px 8px;">Таймаут публикации — сервер не ответил за 60с</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">TRIG_ERR</span></td>
-                                        <td style="padding:5px 8px;">Форма не отправлена — домен/page_id неверны</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">NET_ERR</span></td>
-                                        <td style="padding:5px 8px;">Ошибка сети — прокси/соединение недоступно</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">AUTH_401</span></td>
-                                        <td style="padding:5px 8px;">Токен истёк — обновите session_id и xsrf_token</td>
-                                    </tr>
-                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">RATE_429</span></td>
-                                        <td style="padding:5px 8px;">Rate limit — auto-retry 3 попытки (15с→30с→60с)</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:5px 8px;"><span class="code" style="font-size:10px;">STOP_USR</span></td>
-                                        <td style="padding:5px 8px;">Остановлено пользователем</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        </div>
-                </div>
+                        </div><!-- /send-col-right -->
+                    </div><!-- /send-grid -->
                 </div>
 
                 <!-- ANALYTICS -->
@@ -1325,32 +2020,57 @@
                     <h2 class="page-title">Аналитика</h2>
                     <p class="page-desc">Статистика рассылок и логи</p>
 
-                    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
-                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Всего отправлено</div><div class="stat-num text-primary" id="analytics-total">0</div></div>
-                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Успешных</div><div class="stat-num text-success" id="analytics-success">0</div></div>
-                        <div class="stat-box liquid-glass-stat"><div class="stat-label">Ошибок</div><div class="stat-num text-danger" id="analytics-failed">0</div></div>
-                        <div class="stat-box liquid-glass-stat"><div class="stat-label">% Успеха</div><div class="stat-num" id="analytics-rate" style="color:#60a5fa;">0%</div></div>
-                    </div>
-
-                    <div class="card mb-16">
-                        <div class="card-title">Отправки за последние 14 дней</div>
-                        <div id="analytics-chart" style="display:flex; align-items:flex-end; gap:4px; height:160px; padding-top:16px;"></div>
-                    </div>
-
-                    <div class="grid-2 mb-16">
-                        <div class="card">
-                            <div class="card-title">Топ аккаунтов</div>
-                            <div id="analytics-top-accounts" style="font-size:13px; color:var(--text-secondary);">Нет данных</div>
+                    <!-- Stats + Chart side by side -->
+                    <div class="grid-2" style="gap:24px; align-items:start; grid-template-columns:1fr 2fr;">
+                        <!-- Left: Stats 2x2 -->
+                        <div class="section" style="margin-bottom:0;">
+                            <div class="section-header">
+                                <svg class="ico"><use href="#ico-chart"/></svg>
+                                <span class="section-title">Обзор</span>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                                <div class="stat-box liquid-glass-stat"><div class="stat-label">Всего</div><div class="stat-num text-primary" id="analytics-total">0</div></div>
+                                <div class="stat-box liquid-glass-stat"><div class="stat-label">Успешных</div><div class="stat-num text-success" id="analytics-success">0</div></div>
+                                <div class="stat-box liquid-glass-stat"><div class="stat-label">Ошибок</div><div class="stat-num text-danger" id="analytics-failed">0</div></div>
+                                <div class="stat-box liquid-glass-stat"><div class="stat-label">% Успеха</div><div class="stat-num" id="analytics-rate" style="color:var(--primary);">0%</div></div>
+                            </div>
                         </div>
-                        <div class="card">
-                            <div class="card-title">Последние рассылки</div>
-                            <div id="analytics-recent" style="font-size:13px; color:var(--text-secondary);">Нет данных</div>
+                        <!-- Right: Chart (wider) -->
+                        <div class="section" style="margin-bottom:0;">
+                            <div class="section-header">
+                                <svg class="ico"><use href="#ico-chart"/></svg>
+                                <span class="section-title">Отправки за 14 дней</span>
+                            </div>
+                            <div class="card">
+                                <div id="analytics-chart" style="display:flex; align-items:flex-end; gap:4px; height:160px; padding-top:16px;"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="flex-between mb-16">
-                            <div class="card-title" style="margin-bottom:0;">Логи</div>
+                    <!-- Details: Top accounts + Recent mailings -->
+                    <div class="section">
+                        <div class="section-header">
+                            <svg class="ico"><use href="#ico-user"/></svg>
+                            <span class="section-title">Детали</span>
+                        </div>
+                        <div class="grid-2">
+                            <div class="card">
+                                <div class="card-title">Топ аккаунтов</div>
+                                <div id="analytics-top-accounts" style="font-size:13px; color:var(--text-secondary);">Нет данных</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-title">Последние рассылки</div>
+                                <div id="analytics-recent" style="font-size:13px; color:var(--text-secondary);">Нет данных</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Логи -->
+                    <div class="section">
+                        <div class="section-header">
+                            <svg class="ico"><use href="#ico-code"/></svg>
+                            <span class="section-title">Логи</span>
+                            <div style="flex:1;"></div>
                             <div class="custom-select custom-select-logs" id="select-log-date" style="width:auto; min-width:180px;">
                                 <div class="custom-select-trigger" onclick="toggleSelect('select-log-date')">
                                     <span class="select-label">Выберите дату...</span>
@@ -1361,7 +2081,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="log-content" class="log-box" style="min-height:200px; max-height:400px;">Выберите дату для просмотра логов...</div>
+                        <div class="card">
+                            <div id="log-content" class="log-box" style="min-height:200px; max-height:400px;">Выберите дату для просмотра логов...</div>
+                        </div>
                     </div>
                 </div>
 
@@ -1373,9 +2095,9 @@
     <div class="modal" id="modal-create-account">
         <div class="modal-box liquid-glass">
             <h2 class="modal-title">Добавить аккаунт</h2>
-            <div class="form-group"><label class="form-label">Название</label><input type="text" id="create-app-name" placeholder="Мой Аккаунт" autocomplete="off"></div>
-            <div class="form-group"><label class="form-label">Session ID</label><input type="text" id="create-session-id" placeholder="Session ID из WebFlow" autocomplete="off"></div>
-            <div class="form-group"><label class="form-label">XSRF Token</label><input type="text" id="create-xsrf-token" placeholder="XSRF Token" autocomplete="off"></div>
+            <div class="form-group"><label class="form-label">Название</label><input type="text" id="create-app-name" placeholder="Poshmark Store, My eBay, Depop Shop..." autocomplete="off"></div>
+            <div class="form-group"><label class="form-label">Session ID</label><input type="text" id="create-session-id" placeholder="X-Session-ID из DevTools → Network" autocomplete="off"></div>
+            <div class="form-group"><label class="form-label">XSRF Token</label><input type="text" id="create-xsrf-token" placeholder="X-XSRF-TOKEN из DevTools → Network" autocomplete="off"></div>
             <div class="flex gap-12">
                 <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('modal-create-account')">Отмена</button>
                 <button class="btn btn-primary" style="flex:1;" onclick="saveNewAccount()">Добавить</button>
@@ -1414,11 +2136,17 @@
         <div class="modal-box-wide liquid-glass">
             <div class="flex-between" style="margin-bottom:16px;">
                 <h2 style="font-size:18px; font-weight:800;">Предпросмотр</h2>
-                <button class="btn btn-ghost" onclick="closeModal('modal-preview')">✕</button>
+                <div class="flex gap-8" style="align-items:center;">
+                    <button class="btn btn-ghost" onclick="randomizeFullscreenPreview()" style="padding:6px 12px; font-size:11px; gap:4px;"><svg class="ico" style="width:14px;height:14px;"><use href="#ico-dice"/></svg>Рандом</button>
+                    <button class="btn btn-ghost" onclick="closeModal('modal-preview')" style="padding:6px 12px;">✕</button>
             </div>
-            <iframe id="preview-frame" style="flex:1; width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff;" sandbox="allow-same-origin"></iframe>
+            </div>
+            <div id="preview-frame-container" class="fullscreen-preview-body"></div>
         </div>
     </div>
+
+    <!-- Theme transition ripple -->
+    <div id="theme-ripple"></div>
 
     <!-- Custom cursor -->
     <div class="cursor-glow" id="cursor-glow"></div>
@@ -1433,6 +2161,15 @@
             val = Math.round((val + delta) * 10) / 10;
             input.value = Math.max(min, Math.min(max, val));
         }
+
+        document.querySelectorAll('.stepper input[type="number"]').forEach(input => {
+            input.addEventListener('blur', () => {
+                const mn = parseFloat(input.min), mx = parseFloat(input.max);
+                let v = parseFloat(input.value);
+                if (isNaN(v)) v = mn;
+                input.value = Math.max(mn, Math.min(mx, Math.round(v * 10) / 10));
+            });
+        });
 
         // Custom select
         function toggleSelect(id) {
@@ -1466,44 +2203,91 @@
             }
         });
 
-        // Custom cursor
+        // Custom cursor with magnetic effect
         (function() {
             const glow = document.getElementById('cursor-glow');
             const dot = document.getElementById('cursor-dot');
             const ring = document.getElementById('cursor-ring');
             let mx = 0, my = 0;
+            let dx = 0, dy = 0;
             let rx = 0, ry = 0;
+            let gx = 0, gy = 0;
+            let magnetTarget = null;
 
             document.addEventListener('mousemove', e => {
                 mx = e.clientX; my = e.clientY;
-                dot.style.left = mx + 'px';
-                dot.style.top = my + 'px';
-                glow.style.left = mx + 'px';
-                glow.style.top = my + 'px';
             });
 
-            function animateRing() {
-                rx += (mx - rx) * 0.15;
-                ry += (my - ry) * 0.15;
+            function isMagnetVisible(el) {
+                if (!el) return false;
+                const rect = el.getBoundingClientRect();
+                if (rect.width === 0 && rect.height === 0) return false;
+                const style = window.getComputedStyle(el);
+                return style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0;
+            }
+
+            function animate() {
+                let targetX = mx, targetY = my;
+
+                if (magnetTarget) {
+                    if (!isMagnetVisible(magnetTarget)) {
+                        magnetTarget = null;
+                    } else {
+                        const rect = magnetTarget.getBoundingClientRect();
+                        const cx = rect.left + rect.width / 2;
+                        const cy = rect.top + rect.height / 2;
+                        const pull = 0.3;
+                        targetX = mx + (cx - mx) * pull;
+                        targetY = my + (cy - my) * pull;
+                    }
+                }
+
+                dx += (targetX - dx) * 0.2;
+                dy += (targetY - dy) * 0.2;
+                rx += (mx - rx) * 0.1;
+                ry += (my - ry) * 0.1;
+                gx += (mx - gx) * 0.06;
+                gy += (my - gy) * 0.06;
+
+                dot.style.left = dx + 'px';
+                dot.style.top = dy + 'px';
                 ring.style.left = rx + 'px';
                 ring.style.top = ry + 'px';
-                requestAnimationFrame(animateRing);
+                glow.style.left = gx + 'px';
+                glow.style.top = gy + 'px';
+
+                requestAnimationFrame(animate);
             }
-            animateRing();
+            animate();
 
             const hoverTargets = 'a, button, .btn, .nav-item, .account-card, .tpl-card, .mode-opt, input, textarea, select, label[style*="cursor"]';
+            const magnetTargets = 'button, .btn, .nav-item, .tpl-card, .mode-opt';
+
             document.addEventListener('mouseover', e => {
-                if (e.target.closest(hoverTargets)) {
+                const hovered = e.target.closest(hoverTargets);
+                if (hovered) {
                     dot.classList.add('active');
                     ring.classList.add('active');
                 }
+                const mag = e.target.closest(magnetTargets);
+                if (mag) magnetTarget = mag;
             });
             document.addEventListener('mouseout', e => {
-                if (e.target.closest(hoverTargets)) {
+                const hovered = e.target.closest(hoverTargets);
+                if (hovered) {
                     dot.classList.remove('active');
                     ring.classList.remove('active');
                 }
+                const mag = e.target.closest(magnetTargets);
+                if (mag) magnetTarget = null;
             });
+
+            // Reset when any modal closes so stale targets don't jump cursor
+            window._cursorResetMagnet = () => {
+                magnetTarget = null;
+                dot.classList.remove('active');
+                ring.classList.remove('active');
+            };
         })();
     </script>
 </body>

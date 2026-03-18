@@ -39,24 +39,72 @@ def _normalize_proxy(proxy: Optional[str]) -> Optional[dict]:
     return {'http': url, 'https': url}
 
 
-def generate_random_name(min_length: int = 5, max_length: int = 12) -> str:
-    """Генерация случайного имени из букв"""
-    length = random.randint(min_length, max_length)
-    name = random.choice(string.ascii_uppercase)
-    name += ''.join(random.choices(string.ascii_lowercase, k=length-1))
-    return name
+REAL_FIRST_NAMES = [
+    'James', 'John', 'Robert', 'Michael', 'David', 'William', 'Richard', 'Joseph',
+    'Thomas', 'Christopher', 'Daniel', 'Matthew', 'Anthony', 'Mark', 'Steven',
+    'Mary', 'Patricia', 'Jennifer', 'Linda', 'Barbara', 'Elizabeth', 'Susan',
+    'Jessica', 'Sarah', 'Karen', 'Emma', 'Olivia', 'Sophia', 'Ava', 'Isabella',
+    'Noah', 'Liam', 'Ethan', 'Mason', 'Logan', 'Alexander', 'Benjamin', 'Lucas',
+    'Henry', 'Sebastian', 'Jack', 'Aiden', 'Owen', 'Samuel', 'Ryan', 'Nathan',
+    'Chloe', 'Mia', 'Harper', 'Ella', 'Grace', 'Lily', 'Hannah', 'Natalie',
+]
+REAL_LAST_NAMES = [
+    'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller',
+    'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez',
+    'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin',
+    'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark',
+    'Ramirez', 'Lewis', 'Robinson', 'Walker', 'Young', 'Allen', 'King',
+    'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores', 'Green',
+    'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell',
+]
+EMAIL_DOMAINS = [
+    'gmail.com', 'gmail.com', 'gmail.com',
+    'yahoo.com', 'yahoo.com',
+    'outlook.com', 'outlook.com',
+    'hotmail.com', 'icloud.com', 'aol.com', 'live.com', 'msn.com',
+    'comcast.net', 'att.net', 'verizon.net', 'cox.net',
+]
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2 Safari/605.1.15',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+]
+
+
+def jitter(base: float, spread: float = 0.35) -> float:
+    """Добавляет случайный разброс ±spread к базовой задержке."""
+    return base * random.uniform(1 - spread, 1 + spread)
+
+
+def generate_random_name() -> str:
+    """Генерация реалистичного имени (First Last)."""
+    return f"{random.choice(REAL_FIRST_NAMES)} {random.choice(REAL_LAST_NAMES)}"
 
 
 def generate_random_email() -> str:
-    """Генерация случайного email адреса"""
-    username_length = random.randint(5, 15)
-    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=username_length))
-    domains = [
-        'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com',
-        'icloud.com', 'mail.com', 'protonmail.com', 'aol.com'
-    ]
-    domain = random.choice(domains)
-    return f"{username}@{domain}"
+    """Генерация реалистичного email на основе имён."""
+    first = random.choice(REAL_FIRST_NAMES).lower()
+    last = random.choice(REAL_LAST_NAMES).lower()
+    domain = random.choice(EMAIL_DOMAINS)
+    style = random.randint(1, 6)
+    if style == 1:
+        user = f"{first}.{last}"
+    elif style == 2:
+        user = f"{first}{last}"
+    elif style == 3:
+        user = f"{first}.{last}{random.randint(1, 99)}"
+    elif style == 4:
+        user = f"{first[0]}{last}{random.randint(10, 999)}"
+    elif style == 5:
+        user = f"{first}_{last}"
+    else:
+        user = f"{first}{random.randint(100, 9999)}"
+    return f"{user}@{domain}"
 
 
 # ============================================================================
@@ -275,11 +323,12 @@ class WebflowMailer:
         return headers
     
     def _request_kw(self) -> dict:
-        """kwargs для requests: proxies (и timeout при необходимости)."""
+        """kwargs для requests: proxies, timeout, redirect protection."""
         kw = {}
         if self.proxies:
             kw['proxies'] = self.proxies
         kw['timeout'] = 60
+        kw['allow_redirects'] = False
         return kw
     
     def update_form_settings(self, emails: List[str], template: str = None, subject: str = None) -> bool:
@@ -324,12 +373,16 @@ class WebflowMailer:
             if response.status_code == 200:
                 print(f"✅ Форма обновлена ({len(emails)} получателей)")
                 return True
-            elif response.status_code == 401 or response.status_code == 403:
+            elif response.status_code in (301, 302, 303, 307, 308):
+                self.last_error = "AUTH_REDIRECT Сессия истекла — обновите cookies (wfdesignersession) для текущего сайта"
+                print(f"❌ {self.last_error}")
+                return False
+            elif response.status_code in (401, 403):
                 self.last_error = f"AUTH_401 Авторизация [{response.status_code}] — обновите токены"
                 print(f"❌ {self.last_error}")
                 return False
             elif response.status_code == 429:
-                self.last_error = f"#RATE_429 Rate limit [{response.status_code}]"
+                self.last_error = f"RATE_429 Rate limit [{response.status_code}]"
                 print(f"❌ {self.last_error}")
                 return False
             else:
@@ -338,7 +391,7 @@ class WebflowMailer:
                 return False
                 
         except requests.exceptions.ConnectionError as e:
-            self.last_error = f"#NET_ERR Ошибка сети: {str(e)[:80]}"
+            self.last_error = f"NET_ERR Ошибка сети: {str(e)[:80]}"
             print(f"❌ {self.last_error}")
             return False
         except Exception as e:
@@ -378,25 +431,29 @@ class WebflowMailer:
                 task_id = data.get('taskId')
                 print(f"✅ Публикация запущена")
                 return task_id
-            elif response.status_code == 401 or response.status_code == 403:
+            elif response.status_code in (301, 302, 303, 307, 308):
+                self.last_error = "AUTH_REDIRECT Сессия истекла — обновите cookies для текущего сайта"
+                print(f"❌ {self.last_error}")
+                return None
+            elif response.status_code in (401, 403):
                 self.last_error = f"AUTH_401 Публикация [{response.status_code}] — обновите токены"
                 print(f"❌ {self.last_error}")
                 return None
             elif response.status_code == 429:
-                self.last_error = f"#RATE_429 Публикация — rate limit [{response.status_code}]"
+                self.last_error = f"RATE_429 Публикация — rate limit [{response.status_code}]"
                 print(f"❌ {self.last_error}")
                 return None
             else:
-                self.last_error = f"#PUB_FAIL Публикация [{response.status_code}]"
+                self.last_error = f"PUB_FAIL Публикация [{response.status_code}]"
                 print(f"❌ {self.last_error}")
                 return None
                 
         except requests.exceptions.ConnectionError as e:
-            self.last_error = f"#NET_ERR Сеть при публикации: {str(e)[:80]}"
+            self.last_error = f"NET_ERR Сеть при публикации: {str(e)[:80]}"
             print(f"❌ {self.last_error}")
             return None
         except Exception as e:
-            self.last_error = f"#PUB_FAIL Ошибка: {str(e)[:80]}"
+            self.last_error = f"PUB_FAIL Ошибка: {str(e)[:80]}"
             print(f"❌ {self.last_error}")
             return None
     
@@ -432,6 +489,10 @@ class WebflowMailer:
                     return False
                 else:
                     return False
+            elif response.status_code in (301, 302, 303, 307, 308):
+                self.last_error = "AUTH_REDIRECT Сессия истекла — обновите cookies для текущего сайта"
+                print(f"❌ {self.last_error}")
+                return False
             else:
                 print(f"❌ Ошибка {response.status_code}")
                 return False
@@ -489,6 +550,7 @@ class WebflowMailer:
             'dolphin': 'false'
         }
         
+        ua = random.choice(USER_AGENTS)
         headers = {
             "accept": "application/json, text/javascript, */*; q=0.01",
             "accept-encoding": "gzip, deflate, br, zstd",
@@ -496,13 +558,10 @@ class WebflowMailer:
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             "origin": f"https://{self.config['domain']}",
             "referer": f"https://{self.config['domain']}/",
-            "sec-ch-ua": '"Not(A:Brand";v="8", "Chromium";v="144", "Google Chrome";v="144"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Windows"',
             "sec-fetch-dest": "empty",
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "cross-site",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+            "user-agent": ua,
         }
         
         try:
@@ -519,24 +578,24 @@ class WebflowMailer:
                     print(f"✅ Письма отправлены")
                     return True
                 else:
-                    self.last_error = f"#TRIG_ERR Ответ формы: code={data.get('code')} — {data.get('msg', 'неизвестно')}"
+                    self.last_error = f"TRIG_ERR Ответ формы: code={data.get('code')} — {data.get('msg', 'неизвестно')}"
                     print(f"❌ {self.last_error}")
                     return False
             elif response.status_code == 429:
-                self.last_error = f"#RATE_429 Триггер формы [{response.status_code}]"
+                self.last_error = f"RATE_429 Триггер формы [{response.status_code}]"
                 print(f"❌ {self.last_error}")
                 return False
             else:
-                self.last_error = f"#TRIG_ERR Триггер формы [{response.status_code}]"
+                self.last_error = f"TRIG_ERR Триггер формы [{response.status_code}]"
                 print(f"❌ {self.last_error}")
                 return False
                 
         except requests.exceptions.ConnectionError as e:
-            self.last_error = f"#NET_ERR Сеть при отправке формы: {str(e)[:80]}"
+            self.last_error = f"NET_ERR Сеть при отправке формы: {str(e)[:80]}"
             print(f"❌ {self.last_error}")
             return False
         except Exception as e:
-            self.last_error = f"#TRIG_ERR Ошибка: {str(e)[:80]}"
+            self.last_error = f"TRIG_ERR Ошибка: {str(e)[:80]}"
             print(f"❌ {self.last_error}")
             return False
     
@@ -647,7 +706,7 @@ class WebflowMailer:
             if not self.update_form_settings([email_addr], template=unique_template, subject=unique_subject):
                 return False
             
-            time.sleep(1)
+            time.sleep(jitter(1.0))
             
             task_id = self.publish_site()
             if not task_id:
@@ -656,7 +715,7 @@ class WebflowMailer:
             if not self.wait_for_publish(task_id):
                 return False
             
-            time.sleep(2)
+            time.sleep(jitter(2.0))
             
             if not self.trigger_form_submission():
                 return False
@@ -687,18 +746,18 @@ class WebflowMailer:
             if not self.update_form_settings([email_addr], template=unique_inbox, subject=unique_inbox_subject):
                 return False
             
-            time.sleep(1)
+            time.sleep(jitter(1.0))
             task_id = self.publish_site()
             if not task_id:
                 return False
             if not self.wait_for_publish(task_id):
                 return False
-            time.sleep(2)
+            time.sleep(jitter(2.0))
             if not self.trigger_form_submission():
                 return False
             
             delay = self.config.get('dual_mode_delay', 3)
-            time.sleep(delay)
+            time.sleep(jitter(delay))
             
             # === MAIN письмо ===
             unique_main = process_template(self.template_main)
@@ -712,13 +771,13 @@ class WebflowMailer:
             if not self.update_form_settings([email_addr], template=unique_main, subject=unique_main_subject):
                 return False
             
-            time.sleep(1)
+            time.sleep(jitter(1.0))
             task_id = self.publish_site()
             if not task_id:
                 return False
             if not self.wait_for_publish(task_id):
                 return False
-            time.sleep(2)
+            time.sleep(jitter(2.0))
             if not self.trigger_form_submission():
                 return False
         
@@ -776,7 +835,7 @@ class WebflowMailer:
                     break
                 
                 # Проверяем: это rate limit (429)?
-                is_rate_limit = '#RATE_429' in (self.last_error or '')
+                is_rate_limit = 'RATE_429' in (self.last_error or '')
                 
                 if not is_rate_limit or attempt >= MAX_RETRIES:
                     # Не 429 или исчерпаны попытки — фейл
@@ -807,10 +866,11 @@ class WebflowMailer:
             
             # Пауза между отправками (кроме последнего)
             if idx < total - 1:
-                print(f"⏳ Пауза {batch_delay}с...\n")
+                actual_delay = round(jitter(batch_delay), 1)
+                print(f"⏳ Пауза {actual_delay}с...\n")
                 if progress_callback:
-                    progress_callback(current_count, total, success_count, failed_count, f"⏳ Пауза {batch_delay}с...")
-                time.sleep(batch_delay)
+                    progress_callback(current_count, total, success_count, failed_count, f"⏳ Пауза {actual_delay}с...")
+                time.sleep(actual_delay)
         
         final_msg = f"Рассылка завершена: ✅ {success_count} | ❌ {failed_count}"
         print(f"\n📊 {final_msg}\n")

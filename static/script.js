@@ -12,24 +12,111 @@ let timerElapsedFromServer = 0;
 let timerIsSynced = false;
 
 // ============================================================================
+// THEME
+// ============================================================================
+function initTheme() {
+    const saved = localStorage.getItem('theme') || 'dark';
+    applyTheme(saved);
+}
+
+const _SVG_ATTRS = 'viewBox="0 0 24 24" style="display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"';
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const icon = document.getElementById('theme-toggle-icon');
+    if (!icon) return;
+    if (theme === 'light') {
+        icon.innerHTML = `<svg ${_SVG_ATTRS}><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+    } else {
+        icon.innerHTML = `<svg ${_SVG_ATTRS}><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>`;
+    }
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+
+    const btn    = document.getElementById('theme-toggle-icon');
+    const ripple = document.getElementById('theme-ripple');
+
+    // Spin the icon (softer, matches longer ripple)
+    if (btn) {
+        btn.classList.remove('switching');
+        btn.offsetHeight;
+        btn.classList.add('switching');
+        setTimeout(() => btn.classList.remove('switching'), 720);
+    }
+
+    if (ripple) {
+        const rect  = btn ? btn.getBoundingClientRect() : { left: window.innerWidth - 40, top: 24, width: 32, height: 32 };
+        const x     = rect.left + rect.width  / 2;
+        const y     = rect.top  + rect.height / 2;
+        const newBg = next === 'light' ? '#f5f3f0' : '#1a1a1e';
+
+        ripple.style.background = newBg;
+        ripple.style.setProperty('--ripple-x', x + 'px');
+        ripple.style.setProperty('--ripple-y', y + 'px');
+        ripple.classList.remove('dissolving');
+        ripple.style.opacity = '';
+        ripple.offsetHeight;
+        ripple.classList.add('expanding');
+
+        // Enable soft fade on all elements
+        const html = document.documentElement;
+        html.classList.add('theme-fading');
+
+        // Apply theme when ripple covers ~90 % of screen
+        setTimeout(() => {
+            localStorage.setItem('theme', next);
+            applyTheme(next);
+        }, 380);
+
+        // Dissolve the ripple overlay
+        setTimeout(() => {
+            ripple.classList.add('dissolving');
+        }, 500);
+
+        // Clean up
+        setTimeout(() => {
+            ripple.style.transition = 'none';
+            ripple.classList.remove('expanding', 'dissolving');
+            ripple.style.opacity = '';
+            ripple.offsetHeight;
+            ripple.style.transition = '';
+            html.classList.remove('theme-fading');
+        }, 760);
+    } else {
+        localStorage.setItem('theme', next);
+        applyTheme(next);
+    }
+}
+
+initTheme();
+
+// ============================================================================
 // TOAST
 // ============================================================================
 function showToast(msg, type = 'info') {
     const c = document.getElementById('toast-container');
     const t = document.createElement('div');
-    const colors = { success: '#30d158', error: '#ff453a', info: '#3b82f6' };
+    const colors = { success: '#5ec4b0', error: '#e87272', info: '#e8915a' };
     const icons = { success: '✓', error: '✕', info: 'i' };
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const bg = isLight ? 'rgba(255,255,255,0.95)' : 'rgba(42,42,47,0.95)';
+    const border = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)';
+    const textColor = isLight ? '#1a1a1e' : '#e8e8ed';
+    const shadow = isLight ? '0 8px 32px rgba(0,0,0,0.1)' : '0 8px 32px rgba(0,0,0,0.4)';
     t.style.cssText = `
-        background:rgba(28,28,30,0.95); backdrop-filter:blur(20px);
-        border:1px solid rgba(255,255,255,0.08); border-left:3px solid ${colors[type] || colors.info};
-        color:#f5f5f7; padding:14px 20px; border-radius:12px;
-        box-shadow:0 8px 32px rgba(0,0,0,0.4);
+        background:${bg}; backdrop-filter:blur(20px);
+        border:1px solid ${border}; border-left:3px solid ${colors[type] || colors.info};
+        color:${textColor}; padding:14px 20px; border-radius:12px;
+        box-shadow:${shadow};
         font-size:13px; font-weight:500; max-width:360px;
         display:flex; align-items:center; gap:10px;
         animation:toastIn .3s cubic-bezier(.2,1,.3,1);
     `;
     t.innerHTML = `<span style="width:20px;height:20px;border-radius:50%;background:${colors[type]};color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icons[type]}</span><span>${msg}</span>`;
     c.appendChild(t);
+    try { if (typeof soundNotificationsEnabled !== 'undefined' && soundNotificationsEnabled && typeof notificationSound !== 'undefined') { notificationSound.currentTime = 0; notificationSound.play().catch(() => {}); } } catch(_) {}
     setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(30px)'; t.style.transition='all .3s'; setTimeout(()=>t.remove(),300); }, 3500);
 }
 const _s = document.createElement('style');
@@ -108,6 +195,8 @@ async function loadAccounts() {
         renderAccounts();
         updateStats();
         updateBadge();
+        const navBadge = document.getElementById('nav-badge-accounts');
+        if (navBadge) navBadge.textContent = accounts.length;
     } catch (e) { console.error(e); }
 }
 
@@ -176,7 +265,10 @@ function selectAccount(fn) {
         }).catch(e => console.error('Sync error:', e));
     }
 }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    if (window._cursorResetMagnet) window._cursorResetMagnet();
+}
 function openCreateAccountModal() {
     ['create-app-name','create-session-id','create-xsrf-token'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('modal-create-account').classList.add('active');
@@ -219,7 +311,7 @@ async function testProxy() {
     try {
         const r = await fetch('/api/proxy/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proxy }) });
         const d = await r.json();
-        if (d.ok) { resEl.style.background = 'rgba(48,209,88,0.1)'; resEl.style.color = 'var(--success)'; resEl.textContent = 'Прокси работает. Внешний IP: ' + d.ip; }
+        if (d.ok) { resEl.style.background = 'rgba(94,196,176,0.1)'; resEl.style.color = 'var(--success)'; resEl.textContent = 'Прокси работает. Внешний IP: ' + d.ip; }
         else { resEl.style.background = 'rgba(255,69,58,0.1)'; resEl.style.color = 'var(--danger)'; resEl.textContent = d.error || 'Ошибка'; }
     } catch (e) { resEl.style.background = 'rgba(255,69,58,0.1)'; resEl.style.color = 'var(--danger)'; resEl.textContent = 'Ошибка сети'; }
 }
@@ -270,7 +362,14 @@ async function applyTemplate(filename, name) {
             // Автоматически подставляем имя отправителя из бренда
             const senderName = (window._templateSenderNames && window._templateSenderNames[filename]) || name;
             document.getElementById('template-sender-name').value = senderName;
-            
+
+            // Если превью открыто — сразу перерисовываем (программный setValue не стреляет input-event)
+            const panel = document.getElementById('template-inline-preview');
+            if (panel && panel.classList.contains('open')) {
+                _previewLastContent = '';
+                updateLivePreview(true);
+            }
+
             // Автосохранение в текущий аккаунт
             if (currentAccount) {
                 const subject = document.getElementById('template-subject').value;
@@ -336,6 +435,20 @@ function clearTemplate() {
     document.getElementById('template-sender-name').value = '';
     document.getElementById('template-subject').value = '';
     document.getElementById('template-content').value = '';
+
+    const container = document.getElementById('preview-panel-content');
+    if (container) {
+        const shadow = container.shadowRoot;
+        if (shadow) shadow.innerHTML = '';
+        container.innerHTML = '';
+    }
+    _previewLastContent = '';
+
+    const panel = document.getElementById('template-inline-preview');
+    if (panel && panel.style.display !== 'none') {
+        toggleTemplateEditor('code');
+    }
+
     showToast('Поля очищены', 'info');
 }
 function previewTemplate() {
@@ -373,8 +486,7 @@ function previewTemplateWithVars() {
         content = content.split(k).join(v);
     }
     content = processSpintax(content);
-    const frame = document.getElementById('preview-frame');
-    frame.src = URL.createObjectURL(new Blob([content],{type:'text/html'}));
+    _renderFullscreenPreview(content);
     document.getElementById('modal-preview').classList.add('active');
 }
 
@@ -398,7 +510,18 @@ async function loadSettings() {
         const cr = await fetch('/api/config/load'); const cfg = await cr.json();
         if (cfg) {
             const map = {session_id:'engine-session-id',xsrf_token:'engine-xsrf-token',site_id:'engine-site-id',element_id:'engine-element-id',page_id:'engine-page-id',site_name:'engine-site-name',domain:'engine-domain',email_sender_name:'engine-sender-name',batch_size:'engine-batch-size',batch_delay:'engine-batch-delay'};
-            for (const [k,id] of Object.entries(map)) { const el=document.getElementById(id); if(el&&cfg[k]!=null) el.value=cfg[k]; }
+            for (const [k,id] of Object.entries(map)) {
+                const el = document.getElementById(id);
+                if (el && cfg[k] != null) {
+                    el.value = cfg[k];
+                    if (el.type === 'number' && el.min !== '' && el.max !== '') {
+                        const mn = parseFloat(el.min), mx = parseFloat(el.max);
+                        let v = parseFloat(el.value);
+                        if (isNaN(v)) v = mn;
+                        el.value = Math.max(mn, Math.min(mx, v));
+                    }
+                }
+            }
         }
         
         // Перезаписываем session_id и xsrf_token из активного аккаунта (приоритет аккаунта)
@@ -449,6 +572,149 @@ async function saveAllSettings() {
             await loadAccounts();
         } else showToast('Ошибка','error');
     } catch(e){ showToast('Ошибка','error'); }
+}
+
+// ============================================================================
+// SAVE AUTH SECTION (Session ID, XSRF Token, Designer Cookie)
+// ============================================================================
+async function saveAuthSection() {
+    const btn    = document.getElementById('btn-save-auth');
+    const status = document.getElementById('auth-save-status');
+    const sid    = document.getElementById('engine-session-id').value.trim();
+    const xsrf   = document.getElementById('engine-xsrf-token').value.trim();
+    const ds     = document.getElementById('engine-designer-session').value.trim();
+
+    if (!sid && !xsrf && !ds) {
+        showToast('Заполните хотя бы одно поле авторизации', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    try {
+        const payload = { session_id: sid, xsrf_token: xsrf };
+        if (ds) payload.designer_session = ds;
+        const r = await fetch('/api/config/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+
+        if (ds) {
+            document.getElementById('engine-designer-session').value = '';
+            document.getElementById('engine-designer-session').placeholder =
+                'Сохранено — вставьте новое значение для обновления';
+        }
+
+        status.style.color = 'var(--success)';
+        status.textContent = '✓ Сохранено';
+        status.style.opacity = '1';
+        setTimeout(() => { status.style.opacity = '0'; }, 3000);
+
+        showToast('Авторизация сохранена', 'success');
+    } catch (e) {
+        status.style.color = 'var(--danger)';
+        status.textContent = '✗ Ошибка сохранения';
+        status.style.opacity = '1';
+        showToast('Ошибка сохранения авторизации', 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ============================================================================
+// AUTO-DETECT WEBFLOW URL
+// ============================================================================
+async function parseWebflowUrl() {
+    const input = document.getElementById('url-parse-input');
+    const btn   = document.getElementById('btn-parse-url');
+    const url   = (input?.value || '').trim();
+
+    if (!url) { showToast('Вставьте ссылку на сайт', 'error'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="ico spin" style="margin-right:6px;width:14px;height:14px;"><use href="#ico-loader"/></svg>Распознаю...';
+    _setParseStatus('', 'loading');
+
+    try {
+        const r    = await fetch('/api/config/parse-url', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ url }),
+        });
+        const data = await r.json();
+
+        if (!data.success) {
+            _setParseStatus('❌ ' + data.error, 'error');
+            showToast(data.error, 'error');
+            return;
+        }
+
+        const cfg = data.config;
+
+        const fieldMap = {
+            'engine-site-id':    cfg.site_id    || '',
+            'engine-element-id': cfg.element_id || '',
+            'engine-page-id':    cfg.page_id    || '',
+            'engine-site-name':  cfg.site_name  || '',
+            'engine-domain':     cfg.domain     || '',
+        };
+        for (const [id, val] of Object.entries(fieldMap)) {
+            const el = document.getElementById(id);
+            if (el && val) el.value = val;
+        }
+
+        await fetch('/api/config/save', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(cfg),
+        });
+
+        const fullyFetched = data.fetched.includes('site_id') && data.fetched.includes('element_id');
+
+        const cfgSection = document.getElementById('section-site-config');
+        if (cfgSection) cfgSection.style.display = fullyFetched ? 'none' : '';
+
+        const fetchedLabels = [];
+        if (data.fetched.includes('site_id'))    fetchedLabels.push('Site ID');
+        if (data.fetched.includes('page_id'))    fetchedLabels.push('Page ID');
+        if (data.fetched.includes('element_id')) fetchedLabels.push('Element ID');
+        const fetchedInfo = fetchedLabels.length
+            ? 'Получено: <strong>' + fetchedLabels.join(', ') + '</strong>'
+            : '⚠️ Не удалось получить ID — убедитесь что сайт опубликован';
+        const warnHtml = data.warnings.length
+            ? '<div style="margin-top:6px;opacity:0.6;font-size:11px;">' + data.warnings.join(' · ') + '</div>'
+            : '';
+
+        _setParseStatus(
+            '✓ <strong>' + (cfg.site_name || cfg.design_host) + '</strong><br>' + fetchedInfo + warnHtml,
+            fullyFetched ? 'success' : data.fetched.length ? 'partial' : 'warn'
+        );
+
+        showToast(fullyFetched ? 'Конфигурация заполнена' : 'Частично заполнено — проверьте предупреждения', fullyFetched ? 'success' : 'info');
+
+    } catch (e) {
+        _setParseStatus('❌ Ошибка: ' + e.message, 'error');
+        showToast('Ошибка запроса', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="ico" style="margin-right:6px;"><use href="#ico-zap"/></svg>Распознать';
+    }
+}
+
+function _setParseStatus(html, type) {
+    const el = document.getElementById('url-parse-status');
+    if (!el) return;
+    if (!html) { el.style.display = 'none'; return; }
+    const c = {
+        success: ['rgba(94,196,176,0.08)',  'rgba(94,196,176,0.2)',  'var(--success)'],
+        partial: ['rgba(232,145,90,0.08)',  'rgba(232,145,90,0.2)',  'var(--primary)'],
+        warn:    ['rgba(232,145,90,0.08)',  'rgba(232,145,90,0.2)',  'var(--primary)'],
+        error:   ['rgba(232,114,114,0.08)', 'rgba(232,114,114,0.2)', 'var(--danger)'],
+        loading: ['rgba(255,255,255,0.03)', 'var(--border)',          'var(--text-secondary)'],
+    }[type] || ['rgba(255,255,255,0.03)', 'var(--border)', 'var(--text-secondary)'];
+    el.style.cssText = `display:block;background:${c[0]};border:1px solid ${c[1]};color:${c[2]};margin-top:12px;padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;line-height:1.6;`;
+    el.innerHTML = html;
 }
 
 // ============================================================================
@@ -550,7 +816,7 @@ function resetTimer() {
 // ============================================================================
 // SENDING
 // ============================================================================
-function selectMode(btn) { document.querySelectorAll('.mode-opt').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); selectedMode=parseInt(btn.dataset.mode); document.getElementById('send-mode').value=selectedMode; }
+function selectMode(btn) { document.querySelectorAll('.mode-opt').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); selectedMode=parseInt(btn.dataset.mode); document.getElementById('send-mode').value=selectedMode; const sm=document.getElementById('stat-mode'); if(sm) sm.textContent='Режим '+selectedMode; }
 function setupEmailsCounter() { document.getElementById('emails-input').addEventListener('input',function(){ document.getElementById('emails-count').textContent=this.value.split('\n').filter(l=>l.trim()&&l.includes('@')).length; }); }
 function loadEmailsFromFile(e) { const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{document.getElementById('emails-input').value=ev.target.result; const n=ev.target.result.split('\n').filter(l=>l.trim()&&l.includes('@')).length; document.getElementById('emails-count').textContent=n; showToast(`Загружено ${n} email`,'success');}; r.readAsText(f); }
 function updateSendInfo() {
@@ -611,18 +877,18 @@ function updateSidebarStatus(status, current, total) {
     const text = document.getElementById('status-text');
     dot.classList.remove('pulse');
     if (status === 'running') {
-        dot.style.background = '#3b82f6';
+        dot.style.background = '#e8915a';
         dot.classList.add('pulse');
         text.textContent = `Отправка ${current}/${total}...`;
-        text.style.color = '#60a5fa';
+        text.style.color = '#e8915a';
     } else if (status === 'completed') {
-        dot.style.background = '#30d158';
+        dot.style.background = '#5ec4b0';
         text.textContent = 'Завершено';
-        text.style.color = '#30d158';
+        text.style.color = '#5ec4b0';
     } else if (status === 'error') {
-        dot.style.background = '#ff453a';
+        dot.style.background = '#e87272';
         text.textContent = 'Ошибка';
-        text.style.color = '#ff453a';
+        text.style.color = '#e87272';
     } else if (status === 'stopped') {
         dot.style.background = '#ff9f0a';
         text.textContent = 'Остановлено';
@@ -656,7 +922,7 @@ function startPolling() {
                 const wasAtBottom = lc.scrollHeight - lc.scrollTop - lc.clientHeight < 60;
                 lc.innerHTML=d.logs.slice(-100).map(l=>{
                     const clr=l.level==='error'?'var(--danger)':l.level==='success'?'var(--success)':'var(--text-secondary)';
-                    let msg = esc(l.message).replace(/(#[A-Z_0-9]+)/g, '<span style="background:rgba(37,99,235,0.15);color:#60a5fa;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;">$1</span>');
+                    let msg = esc(l.message).replace(/(#[A-Z_0-9]+)/g, '<span style="background:rgba(232,145,90,0.12);color:#e8915a;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;">$1</span>');
                     return `<div style="margin-bottom:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><div style="display:flex;justify-content:space-between;font-size:10px;opacity:0.4;margin-bottom:2px;"><span>${l.timestamp}</span></div><div style="color:${clr};font-size:11px;">${msg}</div></div>`;
                 }).join('');
                 // Автоскролл вниз к новым логам (если пользователь не скроллил вверх)
@@ -730,6 +996,7 @@ async function applyVarsToTemplate() {
 }
 
 async function randomizeAndPreview() {
+    if (!document.getElementById('template-content').value.trim()) return showToast('Шаблон пуст', 'error');
     await randomizeVars();
     previewTemplateWithVars();
 }
@@ -737,35 +1004,108 @@ async function randomizeAndPreview() {
 // ============================================================================
 // VISUAL EDITOR (Code / Preview toggle)
 // ============================================================================
-let templateEditorDebounce = null;
+let _previewLastContent = '';
+let _previewDebounceTimer = null;
+
 function toggleTemplateEditor(mode) {
     const textarea = document.getElementById('template-content');
-    const preview = document.getElementById('template-live-preview');
+    const panel = document.getElementById('template-inline-preview');
     document.querySelectorAll('.template-editor-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+
     if (mode === 'code') {
         textarea.style.display = '';
-        preview.style.display = 'none';
-        if (templateEditorDebounce) { clearInterval(templateEditorDebounce); templateEditorDebounce = null; }
+        panel.classList.remove('open');
+        textarea.removeEventListener('input', _onTemplateInput);
     } else {
         textarea.style.display = 'none';
-        preview.style.display = '';
-        updateLivePreview();
-        // Start debounced updates
-        if (templateEditorDebounce) clearInterval(templateEditorDebounce);
-        templateEditorDebounce = setInterval(updateLivePreview, 600);
+        panel.classList.add('open');
+        _previewLastContent = '';
+        updateLivePreview(true);
+        textarea.addEventListener('input', _onTemplateInput);
     }
 }
-function updateLivePreview() {
-    const content = document.getElementById('template-content').value;
-    if (!content) return;
-    let html = content;
+
+function _onTemplateInput() {
+    if (_previewDebounceTimer) clearTimeout(_previewDebounceTimer);
+    _previewDebounceTimer = setTimeout(() => updateLivePreview(false), 400);
+}
+
+function updateLivePreview(force) {
+    const raw = document.getElementById('template-content').value;
+    const container = document.getElementById('preview-panel-content');
+    if (!raw) {
+        container.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;margin-bottom:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15" style="opacity:0.4"/><line x1="9" y1="18" x2="13" y2="18" style="opacity:0.3"/></svg>
+            <div style="font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">Шаблон не загружен</div>
+            <div style="font-size:12px;color:var(--text-tertiary);max-width:260px;">Выберите шаблон из списка или вставьте HTML-код на вкладке «Код»</div>
+        </div>`;
+        return;
+    }
+
     const vars = getTemplateVars();
+    let html = raw;
     for (const [k, v] of Object.entries(vars)) { html = html.split(k).join(v); }
-    html = processSpintax(html);
-    const frame = document.getElementById('template-live-preview');
-    const blob = new Blob([html], {type: 'text/html'});
-    const url = URL.createObjectURL(blob);
-    frame.src = url;
+
+    if (!force && html === _previewLastContent) return;
+    _previewLastContent = html;
+
+    const rendered = processSpintax(html);
+    const shadow = container.shadowRoot || container.attachShadow({ mode: 'open' });
+    shadow.innerHTML = rendered;
+}
+
+function togglePreviewExpand() {
+    const body = document.getElementById('preview-panel-body');
+    const bar = document.getElementById('preview-expand-bar');
+    const isCollapsed = body.classList.contains('collapsed');
+
+    if (isCollapsed) {
+        body.classList.remove('collapsed');
+        body.classList.add('expanded');
+        bar.classList.add('expanded');
+        bar.querySelector('span').innerHTML = '<span class="expand-arrow">▼</span> Свернуть';
+    } else {
+        body.classList.remove('expanded');
+        body.classList.add('collapsed');
+        bar.classList.remove('expanded');
+        bar.querySelector('span').innerHTML = '<span class="expand-arrow">▼</span> Развернуть полностью';
+    }
+}
+
+async function randomizeInlinePreview() {
+    if (!document.getElementById('template-content').value.trim()) return showToast('Шаблон пуст', 'error');
+    await randomizeVars();
+    _previewLastContent = '';
+    updateLivePreview(true);
+}
+
+function openPreviewFullscreen() {
+    const raw = document.getElementById('template-content').value;
+    if (!raw) return showToast('Шаблон пуст', 'error');
+    const vars = getTemplateVars();
+    let content = raw;
+    for (const [k, v] of Object.entries(vars)) { content = content.split(k).join(v); }
+    content = processSpintax(content);
+    _renderFullscreenPreview(content);
+    document.getElementById('modal-preview').classList.add('active');
+}
+
+function _renderFullscreenPreview(html) {
+    const container = document.getElementById('preview-frame-container');
+    const shadow = container.shadowRoot || container.attachShadow({ mode: 'open' });
+    shadow.innerHTML = html;
+}
+
+async function randomizeFullscreenPreview() {
+    const raw = document.getElementById('template-content').value;
+    if (!raw.trim()) return showToast('Шаблон пуст', 'error');
+    await randomizeVars();
+    const vars = getTemplateVars();
+    let content = raw;
+    for (const [k, v] of Object.entries(vars)) { content = content.split(k).join(v); }
+    content = processSpintax(content);
+    _renderFullscreenPreview(content);
+    showToast('Переменные обновлены', 'success');
 }
 
 // ============================================================================
@@ -901,7 +1241,7 @@ async function viewLog(date) {
                 let color = 'var(--text-secondary)';
                 if (line.includes('[ERROR]')) color = 'var(--danger)';
                 else if (line.includes('[SUCCESS]')) color = 'var(--success)';
-                else if (line.includes('[INFO]')) color = '#60a5fa';
+                else if (line.includes('[INFO]')) color = '#e8915a';
                 return `<div style="color:${color}; margin-bottom:2px;">${esc(line)}</div>`;
             }).join('');
         } else {
@@ -948,8 +1288,8 @@ function updateNotificationButton() {
     if (!btn) return;
     if (soundNotificationsEnabled) {
         if (textEl) textEl.textContent = 'Включены';
-        btn.style.borderColor = 'rgba(48,209,88,0.3)';
-        btn.style.color = '#30d158';
+        btn.style.borderColor = 'rgba(94,196,176,0.3)';
+        btn.style.color = '#5ec4b0';
     } else {
         if (textEl) textEl.textContent = 'Выключены';
         btn.style.borderColor = '';
@@ -1038,6 +1378,7 @@ document.addEventListener('keydown', e => {
     // Escape - close modals
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+        if (window._cursorResetMagnet) window._cursorResetMagnet();
     }
 });
 
