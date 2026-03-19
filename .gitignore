@@ -2,6 +2,7 @@
 config.json
 cookies.json
 settings.json
+custom_templates.json
 .env
 .env.local
 *.env

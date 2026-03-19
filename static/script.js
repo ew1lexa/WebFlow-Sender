@@ -335,21 +335,72 @@ async function deleteAllAccounts() {
 // ============================================================================
 // TEMPLATE PICKER
 // ============================================================================
+const CUSTOM_TPL_COLORS = [
+    '#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef',
+    '#ec4899','#f43f5e','#ef4444','#f97316','#f59e0b',
+    '#eab308','#84cc16','#22c55e','#14b8a6','#06b6d4',
+    '#0ea5e9','#1a1a1a','#6b7280'
+];
+const CUSTOM_TPL_ICONS = [
+    'mail','send','bell','tag','cart','box','truck','gift',
+    'dollar','star','key','shield','fire','zap','globe',
+    'link','folder','pencil','check','eye'
+];
+const BRAND_ICONS = {
+    depop:'tag', poshmark:'star', ebay:'cart', vinted:'truck',
+    mercari:'box', stockx:'zap', inbox:'mail'
+};
+
 async function loadTemplatePicker() {
     try {
         const r = await fetch('/api/templates/list');
         const templates = await r.json();
         const grid = document.getElementById('template-picker');
-        if (!templates.length) { grid.innerHTML = '<div class="text-dim" style="grid-column:1/-1;text-align:center;padding:20px;">Нет шаблонов</div>'; return; }
-        // Сохраняем sender_name для каждого шаблона
         window._templateSenderNames = {};
-        templates.forEach(t => { window._templateSenderNames[t.filename] = t.sender_name || t.name; });
-        grid.innerHTML = templates.map(t => `
-            <div class="tpl-card" onclick="applyTemplate('${t.filename}','${esc(t.name)}')">
-                <div class="tpl-dot" style="background:${t.color};"></div>
+        window._templateSubjects = {};
+        templates.forEach(t => {
+            window._templateSenderNames[t.filename] = t.sender_name || t.name;
+            if (t.subject) window._templateSubjects[t.filename] = t.subject;
+        });
+
+        const builtIn = templates.filter(t => !t.custom);
+        const custom = templates.filter(t => t.custom);
+
+        const _ico = id => `<svg class="ico"><use href="#ico-${id}"/></svg>`;
+
+        let html = builtIn.map(t => {
+            const icon = BRAND_ICONS[t.key] || 'mail';
+            return `<div class="tpl-card" onclick="applyTemplate('${t.filename}','${esc(t.name)}')" style="--card-color:${t.color};">
+                <div class="tpl-actions">
+                    <button class="btn-clone" title="Клонировать" onclick="event.stopPropagation();cloneAsCustom('${t.filename}','${esc(t.name)}','${t.color}')">${_ico('box')}</button>
+                </div>
+                <div class="tpl-icon-bubble" style="--card-color:${t.color};">${_ico(icon)}</div>
                 <div class="tpl-name">${t.name}</div>
+            </div>`;
+        }).join('');
+
+        html += custom.map(t => {
+            const icon = t.icon || 'mail';
+            return `<div class="tpl-card" onclick="applyTemplate('${t.filename}','${esc(t.name)}')" style="--card-color:${t.color};">
+                <div class="tpl-actions">
+                    <button title="Редактировать" onclick="event.stopPropagation();editCustomTemplate('${t.key}')">${_ico('pencil')}</button>
+                    <button class="btn-clone" title="Дублировать" onclick="event.stopPropagation();cloneAsCustom('${t.filename}','${esc(t.name)}','${t.color}')">${_ico('box')}</button>
+                    <button class="btn-del" title="Удалить" onclick="event.stopPropagation();deleteCustomTemplate('${t.key}','${esc(t.name)}')">${_ico('trash')}</button>
+                </div>
+                <div class="tpl-icon-bubble" style="--card-color:${t.color};">${_ico(icon)}</div>
+                <div class="tpl-name">${t.name}</div>
+                <div class="tpl-badge">custom</div>
+            </div>`;
+        }).join('');
+
+        html += `
+            <div class="tpl-card-add" onclick="openCustomTemplateModal()">
+                <div class="tpl-add-icon">${_ico('send')}</div>
+                <span>Создать шаблон</span>
             </div>
-        `).join('');
+        `;
+
+        grid.innerHTML = html;
     } catch(e) { console.error(e); }
 }
 
@@ -359,18 +410,22 @@ async function applyTemplate(filename, name) {
         const data = await r.json();
         if (data.success) {
             document.getElementById('template-content').value = data.content;
-            // Автоматически подставляем имя отправителя из бренда
-            const senderName = (window._templateSenderNames && window._templateSenderNames[filename]) || name;
+
+            const senderName = data.sender_name
+                || (window._templateSenderNames && window._templateSenderNames[filename])
+                || name;
             document.getElementById('template-sender-name').value = senderName;
 
-            // Если превью открыто — сразу перерисовываем (программный setValue не стреляет input-event)
+            if (data.subject) {
+                document.getElementById('template-subject').value = data.subject;
+            }
+
             const panel = document.getElementById('template-inline-preview');
             if (panel && panel.classList.contains('open')) {
                 _previewLastContent = '';
                 updateLivePreview(true);
             }
 
-            // Автосохранение в текущий аккаунт
             if (currentAccount) {
                 const subject = document.getElementById('template-subject').value;
                 await fetch('/api/template/save', {
@@ -378,19 +433,261 @@ async function applyTemplate(filename, name) {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({account: currentAccount, subject, content: data.content, sender_name: senderName})
                 });
-                // Обновляем in-memory аккаунт чтобы другие функции не затёрли шаблон
                 const acc = accounts.find(a => a._filename === currentAccount);
                 if (acc) {
                     acc.template_content = data.content;
                     acc.template_subject = subject;
                     acc.sender_name = senderName;
                 }
-                showToast(`Шаблон "${name}" сохранён в аккаунт · Отправитель: ${senderName}`, 'success');
+                showToast(`Шаблон «${name}» применён`, 'success');
             } else {
-                showToast(`Шаблон "${name}" загружен — выберите аккаунт и сохраните`, 'info');
+                showToast(`Шаблон «${name}» загружен — выберите аккаунт`, 'info');
             }
         }
     } catch(e) { showToast('Ошибка загрузки','error'); }
+}
+
+// ============================================================================
+// CUSTOM TEMPLATES
+// ============================================================================
+
+function _renderColorPalette(selectedColor) {
+    const palette = document.getElementById('custom-tpl-palette');
+    palette.innerHTML = CUSTOM_TPL_COLORS.map(c =>
+        `<div class="color-swatch${c === selectedColor ? ' selected' : ''}" style="background:${c};" data-color="${c}" onclick="selectTplColor('${c}')"></div>`
+    ).join('');
+}
+
+function _renderIconPalette(selectedIcon) {
+    const palette = document.getElementById('custom-tpl-icons');
+    palette.innerHTML = CUSTOM_TPL_ICONS.map(ic =>
+        `<div class="icon-swatch${ic === selectedIcon ? ' selected' : ''}" data-icon="${ic}" onclick="selectTplIcon('${ic}')"><svg class="ico"><use href="#ico-${ic}"/></svg></div>`
+    ).join('');
+}
+
+function selectTplColor(color) {
+    document.getElementById('custom-tpl-color').value = color;
+    document.querySelectorAll('#custom-tpl-palette .color-swatch').forEach(s => {
+        s.classList.toggle('selected', s.getAttribute('data-color') === color);
+    });
+}
+
+function selectTplIcon(icon) {
+    document.getElementById('custom-tpl-icon').value = icon;
+    document.querySelectorAll('#custom-tpl-icons .icon-swatch').forEach(s => {
+        s.classList.toggle('selected', s.getAttribute('data-icon') === icon);
+    });
+}
+
+function insertTplVar(varName) {
+    const ta = document.getElementById('custom-tpl-content');
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    ta.value = ta.value.substring(0, start) + varName + ta.value.substring(end);
+    ta.selectionStart = ta.selectionEnd = start + varName.length;
+    ta.focus();
+    _autoResizeCustomTpl();
+}
+
+function toggleCustomTplEditor(mode) {
+    const textarea = document.getElementById('custom-tpl-content');
+    const preview = document.getElementById('custom-tpl-preview');
+    const varbar = document.getElementById('custom-tpl-varbar');
+    const dropzone = document.getElementById('custom-tpl-dropzone');
+    document.querySelectorAll('.custom-tpl-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    if (mode === 'code') {
+        textarea.style.display = '';
+        varbar.style.display = '';
+        if (dropzone) dropzone.style.display = '';
+        preview.style.display = 'none';
+    } else {
+        textarea.style.display = 'none';
+        varbar.style.display = 'none';
+        if (dropzone) dropzone.style.display = 'none';
+        preview.style.display = 'block';
+        _renderCustomTplPreview();
+    }
+}
+
+function _renderCustomTplPreview() {
+    const raw = document.getElementById('custom-tpl-content').value;
+    const container = document.getElementById('custom-tpl-preview');
+    if (!raw.trim()) {
+        container.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;text-align:center;opacity:0.5;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div style="margin-top:10px;font-size:13px;">Вставьте HTML на вкладке «Код»</div></div>`;
+        return;
+    }
+    let html = raw;
+    try {
+        const vars = getTemplateVars();
+        for (const [k, v] of Object.entries(vars)) { html = html.split(k).join(v); }
+    } catch(_) {}
+    html = processSpintax(html);
+    const shadow = container.shadowRoot || container.attachShadow({ mode: 'open' });
+    shadow.innerHTML = html;
+}
+
+function _autoResizeCustomTpl() {
+    // textarea has fixed max-height with internal scroll — no-op
+}
+
+function _initCustomTplModal() {
+    const ta = document.getElementById('custom-tpl-content');
+    ta.removeEventListener('input', _autoResizeCustomTpl);
+    ta.addEventListener('input', _autoResizeCustomTpl);
+    _setupCustomTplDragDrop();
+    toggleCustomTplEditor('code');
+    document.getElementById('modal-custom-template').classList.add('active');
+    setTimeout(() => { document.getElementById('custom-tpl-name').focus(); _autoResizeCustomTpl(); }, 200);
+}
+
+function openCustomTemplateModal(prefillContent) {
+    document.getElementById('custom-tpl-modal-title').textContent = 'Новый шаблон';
+    document.getElementById('custom-tpl-id').value = '';
+    document.getElementById('custom-tpl-name').value = '';
+    document.getElementById('custom-tpl-subject').value = '';
+    document.getElementById('custom-tpl-sender').value = '';
+    document.getElementById('custom-tpl-color').value = '#3b82f6';
+    document.getElementById('custom-tpl-icon').value = 'mail';
+    document.getElementById('custom-tpl-content').value = prefillContent || '';
+    _renderColorPalette('#3b82f6');
+    _renderIconPalette('mail');
+    _initCustomTplModal();
+}
+
+async function editCustomTemplate(templateId) {
+    try {
+        const r = await fetch(`/api/templates/custom/get?id=${templateId}`);
+        const d = await r.json();
+        if (!d.success) { showToast(d.error || 'Ошибка', 'error'); return; }
+        document.getElementById('custom-tpl-modal-title').textContent = 'Редактировать шаблон';
+        document.getElementById('custom-tpl-id').value = templateId;
+        document.getElementById('custom-tpl-name').value = d.name;
+        document.getElementById('custom-tpl-subject').value = d.subject || '';
+        document.getElementById('custom-tpl-sender').value = d.sender_name || '';
+        document.getElementById('custom-tpl-color').value = d.color || '#3b82f6';
+        document.getElementById('custom-tpl-icon').value = d.icon || 'mail';
+        document.getElementById('custom-tpl-content').value = d.content || '';
+        _renderColorPalette(d.color || '#3b82f6');
+        _renderIconPalette(d.icon || 'mail');
+        _initCustomTplModal();
+    } catch(e) { showToast('Ошибка загрузки', 'error'); }
+}
+
+async function saveCustomTemplate() {
+    const name = document.getElementById('custom-tpl-name').value.trim();
+    const subject = document.getElementById('custom-tpl-subject').value.trim();
+    const sender = document.getElementById('custom-tpl-sender').value.trim();
+    const color = document.getElementById('custom-tpl-color').value;
+    const icon = document.getElementById('custom-tpl-icon').value;
+    const content = document.getElementById('custom-tpl-content').value;
+    const id = document.getElementById('custom-tpl-id').value;
+
+    const missing = [];
+    if (!name) missing.push('Название');
+    if (!sender) missing.push('Отправитель');
+    if (!subject) missing.push('Тема письма');
+    if (!content.trim()) missing.push('Тело письма');
+    if (missing.length) {
+        showToast(`Заполните: ${missing.join(', ')}`, 'error');
+        const firstEmpty = !name ? 'custom-tpl-name' : !sender ? 'custom-tpl-sender' : !subject ? 'custom-tpl-subject' : 'custom-tpl-content';
+        document.getElementById(firstEmpty).focus();
+        return;
+    }
+
+    try {
+        const r = await fetch('/api/templates/custom/save', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: id || undefined, name, subject, sender_name: sender, color, icon, content })
+        });
+        const d = await r.json();
+        if (d.success) {
+            showToast(id ? `Шаблон «${name}» обновлён` : `Шаблон «${name}» создан`, 'success');
+            closeModal('modal-custom-template');
+            await loadTemplatePicker();
+        } else {
+            showToast(d.error || 'Ошибка сохранения', 'error');
+        }
+    } catch(e) { showToast('Ошибка сети', 'error'); }
+}
+
+async function deleteCustomTemplate(templateId, name) {
+    const ok = await customConfirm(`Удалить шаблон «${name}»?`, 'Это действие нельзя отменить.');
+    if (!ok) return;
+    try {
+        const r = await fetch('/api/templates/custom/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: templateId })
+        });
+        const d = await r.json();
+        if (d.success) {
+            showToast(`Шаблон «${name}» удалён`, 'success');
+            await loadTemplatePicker();
+        } else {
+            showToast(d.error || 'Ошибка', 'error');
+        }
+    } catch(e) { showToast('Ошибка сети', 'error'); }
+}
+
+async function cloneAsCustom(filename, name, color) {
+    try {
+        const r = await fetch(`/api/templates/load-file?filename=${filename}`);
+        const d = await r.json();
+        if (!d.success) { showToast('Не удалось загрузить', 'error'); return; }
+        document.getElementById('custom-tpl-modal-title').textContent = 'Клонировать шаблон';
+        document.getElementById('custom-tpl-id').value = '';
+        document.getElementById('custom-tpl-name').value = name + ' (copy)';
+        document.getElementById('custom-tpl-subject').value = d.subject || '';
+        document.getElementById('custom-tpl-sender').value = d.sender_name || '';
+        document.getElementById('custom-tpl-color').value = color || '#3b82f6';
+        document.getElementById('custom-tpl-icon').value = 'mail';
+        document.getElementById('custom-tpl-content').value = d.content || '';
+        _renderColorPalette(color || '#3b82f6');
+        _renderIconPalette('mail');
+        _initCustomTplModal();
+        showToast(`Клонирован «${name}» — отредактируйте и сохраните`, 'info');
+    } catch(e) { showToast('Ошибка', 'error'); }
+}
+
+function _handleHtmlFile(file) {
+    if (!file) return;
+    if (!file.name.endsWith('.html') && !file.name.endsWith('.htm') && file.type !== 'text/html') {
+        showToast('Поддерживаются только .html файлы', 'error');
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = ev => {
+        document.getElementById('custom-tpl-content').value = ev.target.result;
+        toggleCustomTplEditor('code');
+        showToast(`Загружен ${file.name}`, 'success');
+    };
+    reader.readAsText(file);
+}
+
+function _setupCustomTplDragDrop() {
+    const dropzone = document.getElementById('custom-tpl-dropzone');
+    const fileInput = document.getElementById('custom-tpl-file-input');
+    if (!dropzone || dropzone._ddReady) return;
+    dropzone._ddReady = true;
+
+    const prevent = e => { e.preventDefault(); e.stopPropagation(); };
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files[0]) _handleHtmlFile(fileInput.files[0]);
+        fileInput.value = '';
+    });
+
+    dropzone.addEventListener('dragover', e => { prevent(e); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', e => { prevent(e); dropzone.classList.remove('dragover'); });
+    dropzone.addEventListener('drop', e => {
+        prevent(e);
+        dropzone.classList.remove('dragover');
+        _handleHtmlFile(e.dataTransfer.files[0]);
+    });
 }
 
 // ============================================================================

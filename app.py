@@ -676,9 +676,26 @@ def api_set_template():
 def api_template_set_logs():
     return jsonify({"active": template_setting_active, "logs": template_setting_logs})
 
+CUSTOM_TEMPLATES_PATH = "custom_templates.json"
+
+def load_custom_templates() -> list[dict]:
+    """Загружает пользовательские шаблоны из JSON."""
+    if not os.path.exists(CUSTOM_TEMPLATES_PATH):
+        return []
+    try:
+        with open(CUSTOM_TEMPLATES_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return []
+
+def save_custom_templates(templates: list[dict]) -> None:
+    """Сохраняет пользовательские шаблоны в JSON."""
+    with open(CUSTOM_TEMPLATES_PATH, 'w', encoding='utf-8') as f:
+        json.dump(templates, f, indent=2, ensure_ascii=False)
+
 @app.route('/api/templates/list')
 def api_list_templates():
-    """Список доступных шаблонов"""
+    """Список встроенных + пользовательских шаблонов"""
     templates_dir = "templates"
     templates = []
     brand_colors = {
@@ -691,7 +708,6 @@ def api_list_templates():
         'vinted': 'Vinted', 'mercari': 'Mercari', 'stockx': 'StockX',
         'inbox': 'Inbox Warming'
     }
-    # Имя отправителя, которое будет отображаться в поле "От кого"
     brand_sender_names = {
         'depop': 'Depop', 'poshmark': 'Poshmark', 'ebay': 'eBay',
         'vinted': 'Vinted', 'mercari': 'Mercari', 'stockx': 'StockX',
@@ -705,14 +721,118 @@ def api_list_templates():
             'key': key,
             'name': brand_names.get(key, key.title()),
             'color': brand_colors.get(key, '#3b82f6'),
-            'sender_name': brand_sender_names.get(key, key.title())
+            'sender_name': brand_sender_names.get(key, key.title()),
+            'custom': False
         })
+
+    for ct in load_custom_templates():
+        templates.append({
+            'filename': f"__custom__{ct['id']}",
+            'key': ct['id'],
+            'name': ct['name'],
+            'color': ct.get('color', '#3b82f6'),
+            'icon': ct.get('icon', 'mail'),
+            'subject': ct.get('subject', ''),
+            'sender_name': ct.get('sender_name', ct['name']),
+            'custom': True
+        })
+
     return jsonify(templates)
+
+@app.route('/api/templates/custom/save', methods=['POST'])
+def api_save_custom_template():
+    """Создать или обновить пользовательский шаблон."""
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    content = data.get('content', '')
+    color = data.get('color', '#3b82f6')
+    icon = data.get('icon', 'mail')
+    sender_name = (data.get('sender_name') or '').strip()
+    subject = (data.get('subject') or '').strip()
+    template_id = data.get('id', '')
+
+    missing = [f for f, v in [('Название', name), ('Отправитель', sender_name),
+                                ('Тема письма', subject), ('Тело письма', content.strip())] if not v]
+    if missing:
+        return jsonify({"success": False, "error": f"Заполните: {', '.join(missing)}"}), 400
+
+    templates = load_custom_templates()
+
+    if template_id:
+        found = False
+        for t in templates:
+            if t['id'] == template_id:
+                t['name'] = name
+                t['content'] = content
+                t['color'] = color
+                t['icon'] = icon
+                t['sender_name'] = sender_name
+                t['subject'] = subject
+                found = True
+                break
+        if not found:
+            return jsonify({"success": False, "error": "Шаблон не найден"}), 404
+    else:
+        template_id = f"custom_{int(time.time())}_{random.randint(100,999)}"
+        templates.append({
+            'id': template_id,
+            'name': name,
+            'content': content,
+            'color': color,
+            'icon': icon,
+            'sender_name': sender_name,
+            'subject': subject
+        })
+
+    save_custom_templates(templates)
+    return jsonify({"success": True, "id": template_id})
+
+@app.route('/api/templates/custom/delete', methods=['POST'])
+def api_delete_custom_template():
+    """Удалить пользовательский шаблон."""
+    data = request.json or {}
+    template_id = data.get('id', '')
+    if not template_id:
+        return jsonify({"success": False, "error": "ID не указан"}), 400
+
+    templates = load_custom_templates()
+    before = len(templates)
+    templates = [t for t in templates if t['id'] != template_id]
+    if len(templates) == before:
+        return jsonify({"success": False, "error": "Шаблон не найден"}), 404
+
+    save_custom_templates(templates)
+    return jsonify({"success": True})
+
+@app.route('/api/templates/custom/get')
+def api_get_custom_template():
+    """Получить содержимое пользовательского шаблона."""
+    template_id = request.args.get('id', '')
+    if not template_id:
+        return jsonify({"success": False, "error": "ID не указан"})
+
+    for t in load_custom_templates():
+        if t['id'] == template_id:
+            return jsonify({"success": True, "content": t['content'], "name": t['name'],
+                            "color": t['color'], "icon": t.get('icon', 'mail'),
+                            "sender_name": t.get('sender_name', ''),
+                            "subject": t.get('subject', '')})
+    return jsonify({"success": False, "error": "Шаблон не найден"})
 
 @app.route('/api/templates/load-file')
 def api_load_template_file():
-    """Загрузить содержимое файла шаблона"""
-    filename = request.args.get('filename')
+    """Загрузить содержимое файла шаблона (встроенного или пользовательского)."""
+    filename = request.args.get('filename', '')
+
+    if filename.startswith('__custom__'):
+        template_id = filename.replace('__custom__', '')
+        for t in load_custom_templates():
+            if t['id'] == template_id:
+                return jsonify({"success": True, "content": t['content'],
+                                "subject": t.get('subject', ''),
+                                "sender_name": t.get('sender_name', '')})
+        return jsonify({"success": False, "error": "Custom template not found"})
+
     if not filename:
         return jsonify({"success": False, "error": "No filename"})
     filepath = os.path.join("templates", filename)

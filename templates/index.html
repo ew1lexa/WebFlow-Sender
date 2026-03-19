@@ -412,28 +412,192 @@
         .account-actions .btn { flex:1; padding:8px; font-size:12px; }
 
         /* Template picker */
-        .tpl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:24px; }
+        .tpl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
         .tpl-card {
-            position:relative; padding:18px 14px; border-radius:var(--radius-sm);
+            position:relative; padding:20px 14px 16px; border-radius:14px;
             border:1px solid rgba(255,255,255,0.06);
-            background: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+            background: linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
             backdrop-filter: blur(24px) saturate(1.5);
-            -webkit-backdrop-filter: blur(24px) saturate(1.5);
-            text-align:center; cursor:pointer; transition:all 0.3s cubic-bezier(.25,.1,.25,1);
+            text-align:center; cursor:pointer; transition:all 0.35s cubic-bezier(.25,.1,.25,1);
             overflow:hidden;
         }
         .tpl-card::before {
-            content:'';
-            position:absolute; top:0; left:0; right:0; height:1px;
-            background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.12) 50%, transparent 90%);
+            content:''; position:absolute; inset:0;
+            background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--card-color) 12%, transparent) 0%, transparent 70%);
+            opacity:0; transition: opacity 0.35s;
+            pointer-events:none;
         }
+        .tpl-card:hover::before { opacity:1; }
+        .tpl-card::after {
+            content:''; position:absolute; top:0; left:20%; right:20%; height:1px;
+            background: linear-gradient(90deg, transparent, var(--card-color, rgba(255,255,255,0.2)), transparent);
+            opacity:0.5; transition: opacity 0.35s;
+        }
+        .tpl-card:hover::after { opacity:1; left:10%; right:10%; }
         .tpl-card:hover {
-            transform:translateY(-3px);
-            border-color: rgba(255,255,255,0.12);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+            transform:translateY(-4px);
+            border-color: color-mix(in srgb, var(--card-color) 25%, transparent);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.04);
         }
-        .tpl-dot { width:12px; height:12px; border-radius:50%; margin:0 auto 10px; box-shadow: 0 0 10px currentColor; }
-        .tpl-name { font-size:13px; font-weight:600; position:relative; z-index:1; }
+        .tpl-icon-bubble {
+            width:44px; height:44px; border-radius:13px; margin:0 auto 10px;
+            display:flex; align-items:center; justify-content:center;
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--card-color) 18%, transparent),
+                color-mix(in srgb, var(--card-color) 8%, transparent));
+            color: var(--card-color);
+            transition:all 0.35s cubic-bezier(.25,.1,.25,1);
+            position:relative;
+        }
+        .tpl-icon-bubble .ico { width:20px; height:20px; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.2)); }
+        .tpl-card:hover .tpl-icon-bubble {
+            transform:scale(1.08);
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--card-color) 28%, transparent),
+                color-mix(in srgb, var(--card-color) 14%, transparent));
+            box-shadow: 0 4px 20px color-mix(in srgb, var(--card-color) 25%, transparent);
+        }
+        .tpl-name {
+            font-size:12.5px; font-weight:600; position:relative; z-index:1;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+            letter-spacing:-0.01em;
+        }
+        .tpl-badge {
+            display:inline-block; font-size:8.5px; font-weight:700; text-transform:uppercase;
+            letter-spacing:0.6px; padding:2px 7px; border-radius:5px; margin-top:8px;
+            background:rgba(255,255,255,0.06); color:var(--text-tertiary);
+        }
+        .tpl-card-add {
+            position:relative; padding:20px 14px; border-radius:14px;
+            border:1.5px dashed rgba(255,255,255,0.1);
+            background: transparent;
+            text-align:center; cursor:pointer; transition:all 0.35s cubic-bezier(.25,.1,.25,1);
+            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+            min-height:100px;
+        }
+        .tpl-card-add:hover {
+            border-color: var(--primary);
+            background: var(--primary-muted);
+            transform:translateY(-4px);
+        }
+        .tpl-add-icon {
+            width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+            border:1.5px dashed rgba(255,255,255,0.15); color:var(--text-tertiary);
+            transition:all 0.3s;
+        }
+        .tpl-add-icon .ico { width:18px; height:18px; }
+        .tpl-card-add:hover .tpl-add-icon {
+            border-color:var(--primary); color:var(--primary);
+            background:var(--primary-muted);
+        }
+        .tpl-card-add span { font-size:11px; font-weight:600; opacity:0.4; transition:all 0.2s; }
+        .tpl-card-add:hover span { opacity:1; color:var(--primary); }
+        .tpl-card .tpl-actions {
+            position:absolute; top:6px; right:6px; display:flex; gap:3px; opacity:0; transition:opacity 0.2s; z-index:2;
+        }
+        .tpl-card:hover .tpl-actions { opacity:1; }
+        .tpl-actions button {
+            width:24px; height:24px; border:none; border-radius:7px; cursor:pointer;
+            background:rgba(0,0,0,0.35); color:rgba(255,255,255,0.8);
+            display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+            padding:0; backdrop-filter:blur(12px);
+        }
+        .tpl-actions button .ico { width:12px; height:12px; }
+        .tpl-actions button:hover { background:rgba(0,0,0,0.6); color:#fff; }
+        .tpl-actions .btn-del:hover { background:rgba(239,68,68,0.8); color:#fff; }
+        .tpl-actions .btn-clone:hover { background:rgba(59,130,246,0.8); color:#fff; }
+        .color-palette { display:grid; grid-template-columns:repeat(9,28px); gap:5px; }
+        .color-swatch {
+            width:28px; height:28px; border-radius:50%; cursor:pointer; border:2.5px solid transparent;
+            transition:all 0.2s; position:relative;
+        }
+        .color-swatch:hover { transform:scale(1.15); }
+        .color-swatch.selected { border-color:var(--text-primary); box-shadow:0 0 12px rgba(255,255,255,0.2); }
+        .color-swatch.selected::after {
+            content:'✓'; position:absolute; inset:0; display:flex; align-items:center;
+            justify-content:center; font-size:12px; font-weight:700; color:#fff;
+            text-shadow:0 1px 3px rgba(0,0,0,0.5);
+        }
+        .icon-palette { display:grid; grid-template-columns:repeat(10,34px); gap:5px; }
+        .icon-swatch {
+            width:34px; height:34px; border-radius:8px; cursor:pointer; border:2px solid transparent;
+            display:flex; align-items:center; justify-content:center;
+            background:rgba(255,255,255,0.04); transition:all 0.2s; color:var(--text-secondary);
+        }
+        .icon-swatch .ico { width:17px; height:17px; }
+        .icon-swatch:hover { background:rgba(255,255,255,0.1); transform:scale(1.1); color:var(--text); }
+        .icon-swatch.selected { border-color:var(--primary); background:var(--primary-muted); color:var(--primary); }
+        .tpl-var-bar {
+            display:flex; gap:4px; flex-wrap:wrap; padding:6px 0; border-top:1px solid var(--border); margin-top:6px;
+        }
+        .tpl-var-btn {
+            padding:3px 8px; border:1px solid var(--border); border-radius:5px; cursor:pointer;
+            font-family:'SF Mono','Fira Code',monospace; font-size:10px; font-weight:600;
+            background:rgba(255,255,255,0.03); color:var(--text-tertiary); transition:all 0.15s;
+        }
+        .tpl-var-btn:hover { background:var(--primary-muted); color:var(--primary); border-color:var(--primary); }
+        .tpl-dropzone {
+            border:2px dashed var(--border); border-radius:var(--radius);
+            padding:18px 16px; text-align:center; color:var(--text-tertiary);
+            transition:all 0.25s ease; margin-top:8px; cursor:pointer;
+            display:flex; flex-direction:column; align-items:center; gap:4px;
+            background:rgba(255,255,255,0.02);
+        }
+        .tpl-dropzone:hover {
+            border-color:var(--text-secondary); background:rgba(255,255,255,0.04);
+            color:var(--text-secondary);
+        }
+        .tpl-dropzone.dragover {
+            border-color:var(--primary); background:var(--primary-muted);
+            color:var(--primary); border-style:solid;
+            box-shadow:0 0 0 3px rgba(201,122,66,0.15);
+        }
+        .tpl-dropzone-icon { width:28px; height:28px; opacity:0.5; transition:opacity 0.2s; }
+        .tpl-dropzone:hover .tpl-dropzone-icon,
+        .tpl-dropzone.dragover .tpl-dropzone-icon { opacity:1; }
+        .tpl-dropzone-text { font-size:12px; font-weight:600; }
+        .tpl-dropzone-hint { font-size:10px; opacity:0.6; }
+
+        /* Custom template modal */
+        .modal-box.custom-tpl-modal {
+            max-width:900px; width:96%; padding:28px 36px;
+        }
+        .custom-tpl-modal .form-group { margin-bottom:14px; }
+        .custom-tpl-modal .modal-title { margin-bottom:16px; }
+        .custom-tpl-row2 {
+            display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;
+        }
+        .custom-tpl-row2 .form-group { margin-bottom:0; }
+        .custom-tpl-editor-header {
+            display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
+        }
+        .custom-tpl-tabs {
+            display:flex; gap:2px; background:rgba(255,255,255,0.04);
+            border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px;
+        }
+        .custom-tpl-tab {
+            display:flex; align-items:center; gap:5px;
+            padding:5px 12px; border:none; border-radius:6px; cursor:pointer;
+            font-family:inherit; font-size:12px; font-weight:600;
+            background:transparent; color:var(--text-tertiary); transition:all 0.2s;
+        }
+        .custom-tpl-tab:hover { color:var(--text-secondary); }
+        .custom-tpl-tab.active {
+            background:var(--primary-muted); color:var(--primary);
+            box-shadow:0 1px 3px rgba(0,0,0,0.1);
+        }
+        .custom-tpl-modal textarea#custom-tpl-content {
+            min-height:120px !important; max-height:250px;
+            overflow-y:auto; resize:none;
+            font-family:'SF Mono','Fira Code','Consolas',monospace !important;
+            font-size:12px !important;
+            line-height:1.5;
+        }
+        .custom-tpl-preview-box {
+            min-height:120px; max-height:35vh; overflow:auto;
+            border:1px solid var(--border); border-radius:var(--radius-sm);
+            background:#fff; color:#1a1a1e; padding:0;
+        }
 
         /* Mode selector */
         .mode-group { display:flex; gap:8px; margin-bottom:20px; }
@@ -819,8 +983,8 @@
             color: var(--primary) !important;
         }
         .tpl-card:hover {
-            border-color: rgba(232,145,90,0.2) !important;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            border-color: color-mix(in srgb, var(--card-color) 25%, transparent) !important;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
         }
         .stepper-btn { color: var(--primary) !important; }
         .stepper-btn:hover { background: var(--primary-muted) !important; }
@@ -891,9 +1055,48 @@
         [data-theme="light"] .account-card:hover { border-color: rgba(0,0,0,0.1); }
         [data-theme="light"] .account-card.selected { border-color: rgba(201,122,66,0.25) !important; background: rgba(201,122,66,0.03) !important; }
         [data-theme="light"] .account-stat { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.05); }
-        [data-theme="light"] .tpl-card { border-color: rgba(0,0,0,0.05); background: rgba(255,255,255,0.88); }
-        [data-theme="light"] .tpl-card::before { background: linear-gradient(90deg, transparent 10%, rgba(0,0,0,0.04) 50%, transparent 90%); }
-        [data-theme="light"] .tpl-card:hover { border-color: rgba(201,122,66,0.15) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        [data-theme="light"] .tpl-card {
+            border-color: rgba(0,0,0,0.06);
+            background: linear-gradient(160deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 100%);
+        }
+        [data-theme="light"] .tpl-card:hover {
+            border-color: color-mix(in srgb, var(--card-color) 20%, transparent) !important;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
+        }
+        [data-theme="light"] .tpl-card::before {
+            background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--card-color) 8%, transparent) 0%, transparent 70%);
+        }
+        [data-theme="light"] .tpl-icon-bubble {
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--card-color) 14%, white),
+                color-mix(in srgb, var(--card-color) 6%, white));
+        }
+        [data-theme="light"] .tpl-card:hover .tpl-icon-bubble {
+            background: linear-gradient(135deg,
+                color-mix(in srgb, var(--card-color) 22%, white),
+                color-mix(in srgb, var(--card-color) 10%, white));
+            box-shadow: 0 4px 16px color-mix(in srgb, var(--card-color) 18%, transparent);
+        }
+        [data-theme="light"] .tpl-badge { background:rgba(0,0,0,0.04); }
+        [data-theme="light"] .tpl-card-add { border-color: rgba(0,0,0,0.1); }
+        [data-theme="light"] .tpl-card-add:hover { border-color: var(--primary); background: var(--primary-muted); }
+        [data-theme="light"] .tpl-add-icon { border-color:rgba(0,0,0,0.12); color:var(--text-tertiary); }
+        [data-theme="light"] .tpl-card-add:hover .tpl-add-icon { border-color:var(--primary); color:var(--primary); background:var(--primary-muted); }
+        [data-theme="light"] .tpl-actions button { background:rgba(255,255,255,0.85); color:var(--text-secondary); backdrop-filter:blur(12px); }
+        [data-theme="light"] .tpl-actions button:hover { background:rgba(0,0,0,0.08); }
+        [data-theme="light"] .icon-swatch { background:rgba(0,0,0,0.03); color:var(--text-secondary); }
+        [data-theme="light"] .icon-swatch:hover { background:rgba(0,0,0,0.06); color:var(--text); }
+        [data-theme="light"] .icon-swatch.selected { background:var(--primary-muted); color:var(--primary); }
+        [data-theme="light"] .tpl-var-btn { background:rgba(0,0,0,0.02); border-color:rgba(0,0,0,0.08); }
+        [data-theme="light"] .tpl-var-btn:hover { background:var(--primary-muted); color:var(--primary); border-color:var(--primary); }
+        [data-theme="light"] .tpl-dropzone { border-color:rgba(0,0,0,0.1); background:rgba(0,0,0,0.01); }
+        [data-theme="light"] .tpl-dropzone:hover { border-color:rgba(0,0,0,0.2); background:rgba(0,0,0,0.03); }
+        [data-theme="light"] .tpl-dropzone.dragover { border-color:var(--primary); background:var(--primary-muted); }
+        [data-theme="light"] .color-swatch.selected { border-color:var(--text); }
+        [data-theme="light"] .custom-tpl-tabs { background:rgba(0,0,0,0.02); border-color:rgba(0,0,0,0.08); }
+        [data-theme="light"] .custom-tpl-tab { color:var(--text-tertiary); }
+        [data-theme="light"] .custom-tpl-tab.active { background:var(--primary-muted); color:var(--primary); }
+        [data-theme="light"] .custom-tpl-preview-box { border-color:rgba(0,0,0,0.08); background:#fafafa; }
         [data-theme="light"] .mode-opt { border-color: rgba(0,0,0,0.07); color: var(--text-secondary); }
         [data-theme="light"] .mode-opt:hover { border-color: rgba(0,0,0,0.12); color: var(--text); }
         [data-theme="light"] .mode-opt.active { border-color: var(--primary) !important; background: var(--primary-muted) !important; color: var(--primary) !important; }
@@ -1448,6 +1651,14 @@
             <symbol id="ico-pencil" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
             <symbol id="ico-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
             <symbol id="ico-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></symbol>
+            <symbol id="ico-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+            <symbol id="ico-cart" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></symbol>
+            <symbol id="ico-truck" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></symbol>
+            <symbol id="ico-gift" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+            <symbol id="ico-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+            <symbol id="ico-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+            <symbol id="ico-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+            <symbol id="ico-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
         </defs>
     </svg>
     <!-- Background mesh -->
@@ -2142,6 +2353,57 @@
             </div>
             </div>
             <div id="preview-frame-container" class="fullscreen-preview-body"></div>
+        </div>
+    </div>
+
+    <!-- Custom template modal -->
+    <div class="modal" id="modal-custom-template">
+        <div class="modal-box liquid-glass custom-tpl-modal">
+            <h2 class="modal-title" id="custom-tpl-modal-title">Новый шаблон</h2>
+            <input type="hidden" id="custom-tpl-id" value="">
+
+            <div class="custom-tpl-row2">
+                <div class="form-group"><label class="form-label">Название</label><input type="text" id="custom-tpl-name" placeholder="Invoice US, Welcome..." maxlength="40" autocomplete="off"></div>
+                <div class="form-group"><label class="form-label">Отправитель <span class="label-hint">(From)</span></label><input type="text" id="custom-tpl-sender" placeholder="eBay Support..." autocomplete="off"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Тема письма <span class="label-hint">(Subject)</span></label><input type="text" id="custom-tpl-subject" placeholder="Your order has been shipped!" autocomplete="off"></div>
+
+            <div class="custom-tpl-row2">
+                <div class="form-group"><label class="form-label">Иконка</label><div class="icon-palette" id="custom-tpl-icons"></div><input type="hidden" id="custom-tpl-icon" value="mail"></div>
+                <div class="form-group"><label class="form-label">Цвет</label><div class="color-palette" id="custom-tpl-palette"></div><input type="hidden" id="custom-tpl-color" value="#3b82f6"></div>
+            </div>
+
+            <div class="custom-tpl-editor-header">
+                <label class="form-label" style="margin-bottom:0;">Тело письма</label>
+                <div class="custom-tpl-tabs">
+                    <button class="custom-tpl-tab active" data-mode="code" onclick="toggleCustomTplEditor('code')"><svg class="ico" style="width:13px;height:13px;"><use href="#ico-code"/></svg>Код</button>
+                    <button class="custom-tpl-tab" data-mode="preview" onclick="toggleCustomTplEditor('preview')"><svg class="ico" style="width:13px;height:13px;"><use href="#ico-eye"/></svg>Превью</button>
+                </div>
+            </div>
+            <textarea id="custom-tpl-content" placeholder="<!DOCTYPE html>&#10;<html>&#10;  <!-- Вставьте HTML шаблона -->&#10;</html>"></textarea>
+            <div class="tpl-var-bar" id="custom-tpl-varbar">
+                <button class="tpl-var-btn" onclick="insertTplVar('{email}')">{email}</button>
+                <button class="tpl-var-btn" onclick="insertTplVar('{username}')">{username}</button>
+                <button class="tpl-var-btn" onclick="insertTplVar('{order_id}')">{order_id}</button>
+                <button class="tpl-var-btn" onclick="insertTplVar('{date}')">{date}</button>
+                <button class="tpl-var-btn" onclick="insertTplVar('{random_price}')">{price}</button>
+                <button class="tpl-var-btn" onclick="insertTplVar('{item_name}')">{item}</button>
+                <button class="tpl-var-btn" onclick="insertTplVar('{tracking_number}')">{tracking}</button>
+                <button class="tpl-var-btn" onclick="insertTplVar('{redirect}')">{redirect}</button>
+            </div>
+            <div id="custom-tpl-preview" class="custom-tpl-preview-box" style="display:none;"></div>
+
+            <div id="custom-tpl-dropzone" class="tpl-dropzone">
+                <svg class="ico tpl-dropzone-icon"><use href="#ico-upload"/></svg>
+                <span class="tpl-dropzone-text">Перетащите .html файл сюда</span>
+                <span class="tpl-dropzone-hint">или нажмите, чтобы выбрать файл</span>
+                <input type="file" id="custom-tpl-file-input" accept=".html,.htm" style="display:none;">
+            </div>
+
+            <div class="flex gap-12" style="margin-top:16px;">
+                <button class="btn btn-ghost" style="flex:1;" onclick="closeModal('modal-custom-template')">Отмена</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="saveCustomTemplate()">Сохранить</button>
+            </div>
         </div>
     </div>
 
