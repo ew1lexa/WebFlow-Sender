@@ -151,7 +151,7 @@ Built with a modern dark/light themed SPA dashboard for managing accounts, templ
 ### Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/WebFlow-Sender.git
+git clone https://github.com/ew1lexa/WebFlow-Sender.git
 cd WebFlow-Sender
 pip install -r requirements.txt
 ```
