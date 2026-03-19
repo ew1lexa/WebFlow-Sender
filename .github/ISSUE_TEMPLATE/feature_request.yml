@@ -1,0 +1,44 @@
+name: "Feature Request"
+description: "Suggest a new feature or improvement"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea? We'd love to hear it. Please describe the feature and why it would be useful.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem or motivation"
+      description: "What problem does this solve? Why do you need it?"
+      placeholder: "I want to schedule emails to be sent at a specific time, but currently I have to manually start the mailing."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: "Proposed solution"
+      description: "How would you like this to work?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives considered"
+      description: "Any other approaches you've thought about?"
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Area"
+      options:
+        - Backend (Python/Flask)
+        - Frontend (JS/HTML/CSS)
+        - Email engine (WebflowMailer)
+        - Templates
+        - UI/UX
+        - Documentation
+        - Other
