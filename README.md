@@ -61,6 +61,8 @@ Built with a modern dark/light themed SPA dashboard for managing accounts, templ
 
 **Template System**
 - 7 production-ready templates: Depop, eBay, Poshmark, Vinted, Mercari, StockX, Inbox Warming
+- Custom templates manager: create, edit, clone, duplicate, and delete templates from UI
+- Per-template metadata: icon, accent color, sender name, subject, and HTML body
 - Spintax processor with nested syntax support and MSO conditional protection
 - 11 dynamic variables: `{email}`, `{username}`, `{first_name}`, `{last_name}`, `{order_id}`, `{redirect}`, `{date}`, `{time}`, `{random_price}`, `{tracking_number}`, `{item_name}`
 - HTML uniquification layer: random comments between `</tr>` tags, `data-mid` attributes, invisible preheader blocks
@@ -68,15 +70,18 @@ Built with a modern dark/light themed SPA dashboard for managing accounts, templ
 **Dashboard (SPA)**
 - Five-tab interface: Accounts, Template, Settings, Send, Analytics
 - Dark / Light theme with animated circular ripple transition
+- Enhanced UI motion system: page transitions, card/button/input animations, modal transitions, and count-up stats
 - Auto-configuration from Webflow URL — paste a link, get Site ID, domain, and all API endpoints filled automatically
 - Code / Preview editor for HTML templates with live Shadow DOM preview (inline + fullscreen)
+- Custom template modal with drag-and-drop HTML import and live Code/Preview switch
 - Real-time progress tracking with elapsed timer, speed, ETA, and per-email logs
 - 14-day analytics chart, top accounts ranking, historical log viewer
 - Drag-and-drop `.txt` file import for recipient lists
 - Full export / import of accounts, settings, and config as a single JSON
 - Sound notifications on all UI events (toasts) and completion
-- Custom cursor with magnetic hover effect
-- Custom themed scrollbars, text selection colors, and collapsible UI sections
+- Custom cursor with magnetic hover effect, click burst particles, and trailing particles
+- Accent color system with presets + advanced custom picker (HSV canvas + HEX/RGB controls) applied globally
+- Accent-aware wallpaper/background, cursor particles, custom themed scrollbars, text selection colors, and collapsible UI sections
 - Keyboard shortcuts: `Ctrl+S` (save), `Ctrl+Enter` (start sending), `Esc` (close modals)
 
 ---

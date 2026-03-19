@@ -2,6 +2,33 @@
 
 All notable changes to WebFlow Sender are documented here.
 
+## [2.2.0] — 2026-03-19
+
+### Visual System Upgrade & Accent Customization
+
+### Added
+- Global accent color system with preset swatches and persistence via localStorage
+- Advanced custom color picker modal ("Свой цвет") with HSV canvas, hue slider, HEX input, and RGB controls
+- Live accent preview while editing custom color before applying
+- Full cursor FX package: velocity stretch, text-mode caret behavior, click-burst particles, and trail particles
+- Theme switch FX improvements: particle burst + shockwave animations
+- Animated wallpaper stack for both dark and light themes (aurora layer, animated orbs, noise texture, pointer spotlight)
+- Wide UI animation pass: page reveals, sidebar/item stagger, cards, buttons, focus states, modals, and counters
+
+### Changed
+- Migrated hardcoded amber/light-orange UI colors to accent-driven variables and `color-mix(...)`
+- Scrollbars and text selection now follow the active accent color
+- Cursor particles, rings, glows, and hover states now inherit the current accent color in both themes
+- Custom template workflow refined with stronger client-side validation and richer modal controls
+- Accent color now propagates to wallpaper/background effects for consistent site-wide theming
+
+### Fixed
+- Custom color modal controls that previously updated only on `change` now react instantly on `input`
+- Inconsistent light-theme accent states caused by legacy hardcoded color values
+- Color propagation gaps across cursor effects and secondary UI highlights
+
+---
+
 ## [2.1.0] — 2026-03-19
 
 ### Custom Templates & UI Polish

@@ -31,6 +31,33 @@ function applyTheme(theme) {
     }
 }
 
+function _spawnParticles(cx, cy, count) {
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'theme-particle';
+        const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.5;
+        const dist = 40 + Math.random() * 80;
+        p.style.left = cx + 'px';
+        p.style.top = cy + 'px';
+        p.style.setProperty('--px', Math.cos(angle) * dist + 'px');
+        p.style.setProperty('--py', Math.sin(angle) * dist + 'px');
+        p.style.width = (3 + Math.random() * 5) + 'px';
+        p.style.height = p.style.width;
+        p.style.animationDelay = (Math.random() * 0.1) + 's';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 900);
+    }
+}
+
+function _spawnShockwave(cx, cy) {
+    const ring = document.createElement('div');
+    ring.className = 'theme-shockwave';
+    ring.style.left = cx + 'px';
+    ring.style.top = cy + 'px';
+    document.body.appendChild(ring);
+    setTimeout(() => ring.remove(), 900);
+}
+
 function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
@@ -38,52 +65,52 @@ function toggleTheme() {
     const btn    = document.getElementById('theme-toggle-icon');
     const ripple = document.getElementById('theme-ripple');
 
-    // Spin the icon (softer, matches longer ripple)
+    const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth - 40, top: 24, width: 32, height: 32 };
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
     if (btn) {
         btn.classList.remove('switching');
-        btn.offsetHeight;
+        void btn.offsetHeight;
         btn.classList.add('switching');
-        setTimeout(() => btn.classList.remove('switching'), 720);
+        setTimeout(() => btn.classList.remove('switching'), 900);
     }
 
+    _spawnParticles(cx, cy, 12);
+    _spawnShockwave(cx, cy);
+
     if (ripple) {
-        const rect  = btn ? btn.getBoundingClientRect() : { left: window.innerWidth - 40, top: 24, width: 32, height: 32 };
-        const x     = rect.left + rect.width  / 2;
-        const y     = rect.top  + rect.height / 2;
         const newBg = next === 'light' ? '#f5f3f0' : '#1a1a1e';
 
         ripple.style.background = newBg;
-        ripple.style.setProperty('--ripple-x', x + 'px');
-        ripple.style.setProperty('--ripple-y', y + 'px');
+        ripple.style.setProperty('--ripple-x', cx + 'px');
+        ripple.style.setProperty('--ripple-y', cy + 'px');
         ripple.classList.remove('dissolving');
         ripple.style.opacity = '';
-        ripple.offsetHeight;
+        void ripple.offsetHeight;
         ripple.classList.add('expanding');
 
-        // Enable soft fade on all elements
         const html = document.documentElement;
         html.classList.add('theme-fading');
 
-        // Apply theme when ripple covers ~90 % of screen
         setTimeout(() => {
             localStorage.setItem('theme', next);
             applyTheme(next);
-        }, 380);
+            html.classList.add('theme-flash');
+        }, 450);
 
-        // Dissolve the ripple overlay
         setTimeout(() => {
             ripple.classList.add('dissolving');
-        }, 500);
+        }, 600);
 
-        // Clean up
         setTimeout(() => {
             ripple.style.transition = 'none';
             ripple.classList.remove('expanding', 'dissolving');
             ripple.style.opacity = '';
-            ripple.offsetHeight;
+            void ripple.offsetHeight;
             ripple.style.transition = '';
-            html.classList.remove('theme-fading');
-        }, 760);
+            html.classList.remove('theme-fading', 'theme-flash');
+        }, 900);
     } else {
         localStorage.setItem('theme', next);
         applyTheme(next);
@@ -93,12 +120,314 @@ function toggleTheme() {
 initTheme();
 
 // ============================================================================
+// ACCENT COLOR
+// ============================================================================
+const ACCENT_PRESETS = [
+    { name:'Оранжевый',  hex:'#e8915a' },
+    { name:'Красный',    hex:'#ef4444' },
+    { name:'Розовый',    hex:'#ec4899' },
+    { name:'Фиолетовый', hex:'#a855f7' },
+    { name:'Синий',      hex:'#3b82f6' },
+    { name:'Голубой',    hex:'#06b6d4' },
+    { name:'Бирюзовый',  hex:'#14b8a6' },
+    { name:'Зелёный',   hex:'#22c55e' },
+    { name:'Лайм',      hex:'#84cc16' },
+    { name:'Жёлтый',    hex:'#eab308' },
+    { name:'Золото',    hex:'#f59e0b' },
+];
+const DEFAULT_ACCENT = '#e8915a';
+
+function _hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return {r,g,b};
+}
+
+function _darken(hex, amount) {
+    const {r,g,b} = _hexToRgb(hex);
+    const f = 1 - amount;
+    const nr = Math.round(r*f), ng = Math.round(g*f), nb = Math.round(b*f);
+    return `#${nr.toString(16).padStart(2,'0')}${ng.toString(16).padStart(2,'0')}${nb.toString(16).padStart(2,'0')}`;
+}
+
+function applyAccentColor(hex) {
+    const root = document.documentElement;
+    const {r,g,b} = _hexToRgb(hex);
+    const hover = _darken(hex, 0.12);
+    const {r:hr, g:hg, b:hb} = _hexToRgb(hover);
+
+    root.style.setProperty('--primary', hex);
+    root.style.setProperty('--primary-hover', hover);
+    root.style.setProperty('--primary-muted', `rgba(${r},${g},${b},0.12)`);
+    root.style.setProperty('--accent-glow', `rgba(${r},${g},${b},0.12)`);
+    root.style.setProperty('--accent-r', r);
+    root.style.setProperty('--accent-g', g);
+    root.style.setProperty('--accent-b', b);
+
+    const preview = document.getElementById('accent-preview');
+    if (preview) preview.style.background = hex;
+
+    document.querySelectorAll('.accent-swatch').forEach(s =>
+        s.classList.toggle('selected', s.dataset.color === hex)
+    );
+}
+
+function setAccentColor(hex) {
+    localStorage.setItem('accentColor', hex);
+    applyAccentColor(hex);
+}
+
+function resetAccentColor() {
+    localStorage.removeItem('accentColor');
+    applyAccentColor(DEFAULT_ACCENT);
+    showToast('Цвет сброшен', 'info');
+}
+
+function _initAccentPicker() {
+    const container = document.getElementById('accent-swatches');
+    if (!container) return;
+    const current = localStorage.getItem('accentColor') || DEFAULT_ACCENT;
+
+    container.innerHTML = ACCENT_PRESETS.map(p =>
+        `<div class="accent-swatch${p.hex === current ? ' selected' : ''}" data-color="${p.hex}" title="${p.name}" style="background:${p.hex};" onclick="setAccentColor('${p.hex}')"></div>`
+    ).join('');
+
+    const preview = document.getElementById('accent-preview');
+    if (preview) preview.style.background = current;
+}
+
+(function initAccent() {
+    const saved = localStorage.getItem('accentColor');
+    if (saved) applyAccentColor(saved);
+})();
+
+// ============================================================================
+// COLOR PICKER MODAL
+// ============================================================================
+const _cp = { h:20, s:0.7, v:0.9, draggingSV:false, draggingHue:false };
+
+function _hsvToRgb(h, s, v) {
+    h = ((h % 360) + 360) % 360;
+    const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
+    let r, g, b;
+    if (h < 60)      { r=c; g=x; b=0; }
+    else if (h < 120) { r=x; g=c; b=0; }
+    else if (h < 180) { r=0; g=c; b=x; }
+    else if (h < 240) { r=0; g=x; b=c; }
+    else if (h < 300) { r=x; g=0; b=c; }
+    else              { r=c; g=0; b=x; }
+    return { r: Math.round((r+m)*255), g: Math.round((g+m)*255), b: Math.round((b+m)*255) };
+}
+
+function _rgbToHsv(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max - min;
+    let h = 0;
+    if (d !== 0) {
+        if (max === r) h = 60 * (((g - b) / d) % 6);
+        else if (max === g) h = 60 * ((b - r) / d + 2);
+        else h = 60 * ((r - g) / d + 4);
+    }
+    if (h < 0) h += 360;
+    return { h, s: max === 0 ? 0 : d / max, v: max };
+}
+
+function _rgbToHex(r, g, b) {
+    return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
+}
+
+function _drawSV() {
+    const canvas = document.getElementById('cpicker-sv');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    for (let x = 0; x < w; x++) {
+        const s = x / w;
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        const {r, g, b} = _hsvToRgb(_cp.h, s, 1);
+        grad.addColorStop(0, `rgb(${r},${g},${b})`);
+        grad.addColorStop(1, '#000');
+        ctx.fillStyle = grad;
+        ctx.fillRect(x, 0, 1, h);
+    }
+}
+
+function _updatePickerUI() {
+    const {r, g, b} = _hsvToRgb(_cp.h, _cp.s, _cp.v);
+    const hex = _rgbToHex(r, g, b);
+
+    document.getElementById('cpicker-hex').value = hex;
+    document.getElementById('cpicker-r').value = r;
+    document.getElementById('cpicker-g').value = g;
+    document.getElementById('cpicker-b').value = b;
+
+    const rangeR = document.getElementById('cpicker-range-r');
+    const rangeG = document.getElementById('cpicker-range-g');
+    const rangeB = document.getElementById('cpicker-range-b');
+    if (rangeR) rangeR.value = r;
+    if (rangeG) rangeG.value = g;
+    if (rangeB) rangeB.value = b;
+
+    _updateChannelTracks(r, g, b);
+
+    const live = document.getElementById('cpicker-live');
+    live.style.background = hex;
+    live.style.setProperty('--cpick-color', hex);
+    live.style.boxShadow = `0 4px 20px ${hex}55`;
+
+    const svCur = document.getElementById('cpicker-sv-cursor');
+    svCur.style.left = (_cp.s * 100) + '%';
+    svCur.style.top = ((1 - _cp.v) * 100) + '%';
+    svCur.style.background = hex;
+
+    const hueThumb = document.getElementById('cpicker-hue-thumb');
+    hueThumb.style.left = (_cp.h / 360 * 100) + '%';
+    hueThumb.style.background = _rgbToHex(...Object.values(_hsvToRgb(_cp.h, 1, 1)));
+
+    applyAccentColor(hex);
+}
+
+function _updateChannelTracks(r, g, b) {
+    const setTrack = (id, from, to) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.setProperty('--track-from', from);
+        el.style.setProperty('--track-to', to);
+    };
+    setTrack('cpicker-range-r', _rgbToHex(0, g, b), _rgbToHex(255, g, b));
+    setTrack('cpicker-range-g', _rgbToHex(r, 0, b), _rgbToHex(r, 255, b));
+    setTrack('cpicker-range-b', _rgbToHex(r, g, 0), _rgbToHex(r, g, 255));
+}
+
+function openColorPickerModal() {
+    _cp._originalColor = localStorage.getItem('accentColor') || DEFAULT_ACCENT;
+    const {r, g, b} = _hexToRgb(_cp._originalColor);
+    const hsv = _rgbToHsv(r, g, b);
+    _cp.h = hsv.h; _cp.s = hsv.s; _cp.v = hsv.v;
+
+    document.getElementById('modal-color-picker').classList.add('active');
+
+    requestAnimationFrame(() => {
+        _drawSV();
+        _updatePickerUI();
+        _setupPickerEvents();
+    });
+}
+
+function applyPickerColor() {
+    const hex = document.getElementById('cpicker-hex').value;
+    setAccentColor(hex);
+    closeModal('modal-color-picker');
+    showToast(`Цвет ${hex} применён`, 'success');
+}
+
+function cancelColorPicker() {
+    applyAccentColor(_cp._originalColor || DEFAULT_ACCENT);
+    closeModal('modal-color-picker');
+}
+
+function _setupPickerEvents() {
+    const svWrap = document.getElementById('cpicker-sv-wrap');
+    const hueWrap = document.getElementById('cpicker-hue-wrap');
+    if (svWrap._cpReady) return;
+    svWrap._cpReady = true;
+
+    const getSVFromEvent = e => {
+        const rect = svWrap.getBoundingClientRect();
+        const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+        return { s: x, v: 1 - y };
+    };
+
+    svWrap.addEventListener('mousedown', e => {
+        _cp.draggingSV = true;
+        const {s, v} = getSVFromEvent(e);
+        _cp.s = s; _cp.v = v;
+        _updatePickerUI();
+    });
+
+    hueWrap.addEventListener('mousedown', e => {
+        _cp.draggingHue = true;
+        const rect = hueWrap.getBoundingClientRect();
+        _cp.h = Math.max(0, Math.min(360, (e.clientX - rect.left) / rect.width * 360));
+        _drawSV();
+        _updatePickerUI();
+    });
+
+    document.addEventListener('mousemove', e => {
+        if (_cp.draggingSV) {
+            const {s, v} = getSVFromEvent(e);
+            _cp.s = s; _cp.v = v;
+            _updatePickerUI();
+        }
+        if (_cp.draggingHue) {
+            const rect = hueWrap.getBoundingClientRect();
+            _cp.h = Math.max(0, Math.min(360, (e.clientX - rect.left) / rect.width * 360));
+            _drawSV();
+            _updatePickerUI();
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        _cp.draggingSV = false;
+        _cp.draggingHue = false;
+    });
+
+    const hexInput = document.getElementById('cpicker-hex');
+    const _applyHex = () => {
+        let hex = hexInput.value.trim();
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+            const {r, g, b} = _hexToRgb(hex);
+            const hsv = _rgbToHsv(r, g, b);
+            _cp.h = hsv.h; _cp.s = hsv.s; _cp.v = hsv.v;
+            _drawSV();
+            _updatePickerUI();
+        }
+    };
+    hexInput.addEventListener('input', _applyHex);
+    hexInput.addEventListener('change', _applyHex);
+
+    const _syncRgbFromInputs = () => {
+        const r = parseInt(document.getElementById('cpicker-r').value) || 0;
+        const g = parseInt(document.getElementById('cpicker-g').value) || 0;
+        const b = parseInt(document.getElementById('cpicker-b').value) || 0;
+        const hsv = _rgbToHsv(
+            Math.max(0, Math.min(255, r)),
+            Math.max(0, Math.min(255, g)),
+            Math.max(0, Math.min(255, b))
+        );
+        _cp.h = hsv.h; _cp.s = hsv.s; _cp.v = hsv.v;
+        _drawSV();
+        _updatePickerUI();
+    };
+
+    ['cpicker-r','cpicker-g','cpicker-b'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', _syncRgbFromInputs);
+        el.addEventListener('change', _syncRgbFromInputs);
+    });
+
+    ['cpicker-range-r','cpicker-range-g','cpicker-range-b'].forEach((rangeId, i) => {
+        const numIds = ['cpicker-r','cpicker-g','cpicker-b'];
+        const rangeEl = document.getElementById(rangeId);
+        if (!rangeEl) return;
+        rangeEl.addEventListener('input', () => {
+            document.getElementById(numIds[i]).value = rangeEl.value;
+            _syncRgbFromInputs();
+        });
+    });
+}
+
+// ============================================================================
 // TOAST
 // ============================================================================
 function showToast(msg, type = 'info') {
     const c = document.getElementById('toast-container');
     const t = document.createElement('div');
-    const colors = { success: '#5ec4b0', error: '#e87272', info: '#e8915a' };
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#e8915a';
+    const colors = { success: '#5ec4b0', error: '#e87272', info: accent };
     const icons = { success: '✓', error: '✕', info: 'i' };
     const isLight = document.documentElement.getAttribute('data-theme') === 'light';
     const bg = isLight ? 'rgba(255,255,255,0.95)' : 'rgba(42,42,47,0.95)';
@@ -151,7 +480,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupNav();
     setupEmailsCounter();
     loadTemplatePicker();
+    _initAnimations();
 });
+
+function _countUp(elId, target, suffix = '') {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const start = parseInt(el.textContent) || 0;
+    if (start === target) { el.textContent = target + suffix; return; }
+    const duration = 600;
+    const startTime = performance.now();
+    const step = ts => {
+        const progress = Math.min((ts - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(start + (target - start) * eased) + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+
+function _initAnimations() {
+    document.addEventListener('click', e => {
+        const btn = e.target.closest('.btn');
+        if (!btn) return;
+        const rect = btn.getBoundingClientRect();
+        btn.style.setProperty('--ripple-x', ((e.clientX - rect.left) / rect.width * 100) + '%');
+        btn.style.setProperty('--ripple-y', ((e.clientY - rect.top) / rect.height * 100) + '%');
+        btn.classList.remove('rippling');
+        void btn.offsetWidth;
+        btn.classList.add('rippling');
+        setTimeout(() => btn.classList.remove('rippling'), 600);
+    });
+
+    document.addEventListener('mousemove', e => {
+        const cards = document.querySelectorAll('.card');
+        for (const card of cards) {
+            const rect = card.getBoundingClientRect();
+            if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                card.style.setProperty('--mouse-x', (e.clientX - rect.left) + 'px');
+                card.style.setProperty('--mouse-y', (e.clientY - rect.top) + 'px');
+            }
+        }
+    });
+}
 
 // ============================================================================
 // NAVIGATION
@@ -833,6 +1204,7 @@ async function loadSettings() {
         // Load designer session cookie display (don't show full value for security)
         document.getElementById('engine-designer-session').value = '';
         document.getElementById('engine-designer-session').placeholder = 'Вставьте новое значение wfdesignersession (текущее сохранено)';
+        _initAccentPicker();
     } catch(e){ console.error(e); }
 }
 async function saveAllSettings() {
@@ -1005,8 +1377,8 @@ function _setParseStatus(html, type) {
     if (!html) { el.style.display = 'none'; return; }
     const c = {
         success: ['rgba(94,196,176,0.08)',  'rgba(94,196,176,0.2)',  'var(--success)'],
-        partial: ['rgba(232,145,90,0.08)',  'rgba(232,145,90,0.2)',  'var(--primary)'],
-        warn:    ['rgba(232,145,90,0.08)',  'rgba(232,145,90,0.2)',  'var(--primary)'],
+        partial: ['var(--primary-muted)',  'color-mix(in srgb, var(--primary) 20%, transparent)',  'var(--primary)'],
+        warn:    ['var(--primary-muted)',  'color-mix(in srgb, var(--primary) 20%, transparent)',  'var(--primary)'],
         error:   ['rgba(232,114,114,0.08)', 'rgba(232,114,114,0.2)', 'var(--danger)'],
         loading: ['rgba(255,255,255,0.03)', 'var(--border)',          'var(--text-secondary)'],
     }[type] || ['rgba(255,255,255,0.03)', 'var(--border)', 'var(--text-secondary)'];
@@ -1174,10 +1546,10 @@ function updateSidebarStatus(status, current, total) {
     const text = document.getElementById('status-text');
     dot.classList.remove('pulse');
     if (status === 'running') {
-        dot.style.background = '#e8915a';
+        dot.style.background = 'var(--primary)';
         dot.classList.add('pulse');
         text.textContent = `Отправка ${current}/${total}...`;
-        text.style.color = '#e8915a';
+        text.style.color = 'var(--primary)';
     } else if (status === 'completed') {
         dot.style.background = '#5ec4b0';
         text.textContent = 'Завершено';
@@ -1219,7 +1591,7 @@ function startPolling() {
                 const wasAtBottom = lc.scrollHeight - lc.scrollTop - lc.clientHeight < 60;
                 lc.innerHTML=d.logs.slice(-100).map(l=>{
                     const clr=l.level==='error'?'var(--danger)':l.level==='success'?'var(--success)':'var(--text-secondary)';
-                    let msg = esc(l.message).replace(/(#[A-Z_0-9]+)/g, '<span style="background:rgba(232,145,90,0.12);color:#e8915a;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;">$1</span>');
+                    let msg = esc(l.message).replace(/(#[A-Z_0-9]+)/g, '<span style="background:var(--primary-muted);color:var(--primary);padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;">$1</span>');
                     return `<div style="margin-bottom:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><div style="display:flex;justify-content:space-between;font-size:10px;opacity:0.4;margin-bottom:2px;"><span>${l.timestamp}</span></div><div style="color:${clr};font-size:11px;">${msg}</div></div>`;
                 }).join('');
                 // Автоскролл вниз к новым логам (если пользователь не скроллил вверх)
@@ -1437,10 +1809,10 @@ function renderAnalytics(data) {
     const totalFailed = data.reduce((s, r) => s + r.failed, 0);
     const rate = totalSent > 0 ? Math.round(totalSuccess / totalSent * 100) : 0;
 
-    document.getElementById('analytics-total').textContent = totalSent;
-    document.getElementById('analytics-success').textContent = totalSuccess;
-    document.getElementById('analytics-failed').textContent = totalFailed;
-    document.getElementById('analytics-rate').textContent = rate + '%';
+    _countUp('analytics-total', totalSent);
+    _countUp('analytics-success', totalSuccess);
+    _countUp('analytics-failed', totalFailed);
+    _countUp('analytics-rate', rate, '%');
 
     // Chart: last 14 days
     renderChart(data);
@@ -1538,7 +1910,7 @@ async function viewLog(date) {
                 let color = 'var(--text-secondary)';
                 if (line.includes('[ERROR]')) color = 'var(--danger)';
                 else if (line.includes('[SUCCESS]')) color = 'var(--success)';
-                else if (line.includes('[INFO]')) color = '#e8915a';
+                else if (line.includes('[INFO]')) color = 'var(--primary)';
                 return `<div style="color:${color}; margin-bottom:2px;">${esc(line)}</div>`;
             }).join('');
         } else {
