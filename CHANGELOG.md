@@ -2,6 +2,34 @@
 
 All notable changes to WebFlow Sender are documented here.
 
+## [2.1.0] — 2026-03-19
+
+### Custom Templates & UI Polish
+
+### Added
+- Custom template system: create, edit, duplicate, and delete user templates stored in `custom_templates.json`
+- Icon picker with 20 SVG icons from the global sprite (mail, cart, tag, truck, gift, star, etc.)
+- Color picker with 13 preset colors for template card accent
+- Drag-and-drop HTML file import into template editor (with click-to-upload fallback)
+- Variable insertion toolbar: one-click insert for `{email}`, `{username}`, `{order_id}`, `{date}`, `{price}`, `{item}`, `{tracking}`, `{redirect}`
+- Clone-as-custom button on built-in template cards
+- Code / Preview toggle in custom template editor with spintax + variable processing
+- Subject and sender name fields per custom template, auto-applied on selection
+- Full field validation: name, sender, subject, and body all required before save
+
+### Changed
+- Replaced all emoji icons with consistent SVG sprite icons across the app
+- Redesigned template cards: gradient icon bubbles, radial glow on hover, top-line accent effect
+- Each built-in template now has a unique icon (Depop=tag, eBay=cart, Poshmark=star, Vinted=truck, Mercari=box, StockX=zap, Inbox=mail)
+- Action buttons on cards (edit, clone, delete) now use SVG icons instead of text symbols
+- "Create template" card redesigned with dashed icon bubble and send icon
+
+### Fixed
+- Color picker selection not highlighting (was comparing RGB vs hex)
+- Sender name auto-filling with template name when left empty
+
+---
+
 ## [2.0.0] — 2026-03-19
 
 ### Complete Redesign & Anti-Spam Engine
