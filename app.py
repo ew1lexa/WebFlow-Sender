@@ -4,16 +4,44 @@ import os
 import glob
 import random
 import re
+import secrets
+import shutil
 import string
 import time
 from datetime import datetime
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, session, make_response, g, has_request_context
 from webflow_mailer import WebflowMailer, _normalize_proxy
 import requests as req
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+
+if os.environ.get('RENDER'):
+    from werkzeug.middleware.proxy_fix import ProxyFix
+
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+
+def detect_device_tier(req) -> str:
+    """
+    Подсказка типа устройства для первого HTML-ответа (адаптивная вёрстка).
+    Точная подстройка — в CSS (viewport, pointer) и в JS (data-device при ресайзе).
+    Учитывает Sec-CH-UA-Mobile (если браузер прислал) и типичные UA.
+    """
+    ua = (req.headers.get('User-Agent') or '').lower()
+    if req.headers.get('Sec-CH-UA-Mobile') == '?1':
+        return 'mobile'
+    if 'ipad' in ua or 'tablet' in ua:
+        return 'tablet'
+    if any(k in ua for k in ('iphone', 'ipod', 'android', 'iemobile', 'webos', 'blackberry')):
+        if 'android' in ua and 'mobile' not in ua:
+            return 'tablet'
+        return 'mobile'
+    return 'desktop'
+
 
 # ============================================================================
 # AUTO-CREATE DEFAULT DATA FILES ON FIRST RUN
@@ -107,7 +135,10 @@ TRACKING_PREFIXES = ['1Z', '9400', '9261', 'TBA', 'JD', 'CJ', '420']
 def generate_random_vars(settings=None, redirect_url=''):
     """Генерирует случайные значения переменных для шаблона"""
     if settings is None:
-        settings = load_settings()
+        if has_request_context():
+            settings = load_settings(g.workspace_root)
+        else:
+            settings = {'order_id_type': 'digits', 'order_id_length': 8}
     
     first = random.choice(FIRST_NAMES)
     last = random.choice(LAST_NAMES)
@@ -163,30 +194,124 @@ def generate_random_vars(settings=None, redirect_url=''):
 # ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 # ============================================================================
 
-progress_data = {
-    'status': 'idle',  # idle, running, completed, error, stopped
-    'current': 0,
-    'total': 0,
-    'success': 0,
-    'failed': 0,
-    'logs': [],
-    'start_time': None,
-    'end_time': None
-}
+def _default_progress_state():
+    return {
+        'status': 'idle',
+        'current': 0,
+        'total': 0,
+        'success': 0,
+        'failed': 0,
+        'logs': [],
+        'start_time': None,
+        'end_time': None,
+    }
 
-stop_flag = threading.Event()
 
-template_setting_active = False
-template_setting_logs = []
+_progress_lock = threading.Lock()
+_progress_by_ws = {}
+
+
+def progress_for(ws_id: str) -> dict:
+    with _progress_lock:
+        if ws_id not in _progress_by_ws:
+            _progress_by_ws[ws_id] = _default_progress_state()
+        return _progress_by_ws[ws_id]
+
+
+_stop_lock = threading.Lock()
+_stop_by_ws = {}
+
+
+def stop_event_for(ws_id: str) -> threading.Event:
+    with _stop_lock:
+        if ws_id not in _stop_by_ws:
+            _stop_by_ws[ws_id] = threading.Event()
+        return _stop_by_ws[ws_id]
+
+
+_tpl_set_lock = threading.Lock()
+_tpl_set_by_ws = {}
+
+
+def template_set_state(ws_id: str) -> dict:
+    with _tpl_set_lock:
+        if ws_id not in _tpl_set_by_ws:
+            _tpl_set_by_ws[ws_id] = {'active': False, 'logs': []}
+        return _tpl_set_by_ws[ws_id]
+
+
+BASE_DIR = Path(__file__).resolve().parent
+USER_DATA_DIR = BASE_DIR / 'user_data'
+LEGACY_IMPORT_MARK = USER_DATA_DIR / '.legacy_data_imported'
+
+
+def init_workspace(root: Path) -> Path:
+    """Личная директория данных для cookie-сессии браузера."""
+    root.mkdir(parents=True, exist_ok=True)
+    (root / 'accounts').mkdir(exist_ok=True)
+    (root / 'logs').mkdir(exist_ok=True)
+    ready = root / '.ws_ready'
+    if ready.exists():
+        return root
+
+    if not LEGACY_IMPORT_MARK.exists():
+        if (BASE_DIR / 'config.json').exists() or (BASE_DIR / 'accounts').exists():
+            for name in ('config.json', 'settings.json', 'analytics.json', 'cookies.json', 'custom_templates.json'):
+                src = BASE_DIR / name
+                if src.exists():
+                    shutil.copy2(src, root / name)
+            legacy_acc = BASE_DIR / 'accounts'
+            if legacy_acc.is_dir():
+                for f in legacy_acc.glob('account_*.json'):
+                    shutil.copy2(f, root / 'accounts' / f.name)
+        LEGACY_IMPORT_MARK.touch()
+
+    if not (root / 'config.json').exists():
+        with open(root / 'config.json', 'w', encoding='utf-8') as f:
+            json.dump({**_DEFAULT_CONFIG}, f, indent=4, ensure_ascii=False)
+    if not (root / 'settings.json').exists():
+        with open(root / 'settings.json', 'w', encoding='utf-8') as f:
+            json.dump(
+                {'delay_min': 2, 'delay_max': 5, 'order_id_length': 8, 'order_id_type': 'digits'},
+                f,
+                indent=4,
+                ensure_ascii=False,
+            )
+    if not (root / 'analytics.json').exists():
+        with open(root / 'analytics.json', 'w', encoding='utf-8') as f:
+            json.dump([], f, ensure_ascii=False)
+    if not (root / 'cookies.json').exists():
+        with open(root / 'cookies.json', 'w', encoding='utf-8') as f:
+            json.dump([], f, ensure_ascii=False)
+    if not (root / 'custom_templates.json').exists():
+        with open(root / 'custom_templates.json', 'w', encoding='utf-8') as f:
+            json.dump([], f, ensure_ascii=False)
+
+    ready.touch()
+    return root
+
+
+@app.before_request
+def _ensure_workspace():
+    if request.endpoint == 'static':
+        return
+    ws_id = session.get('ws_id')
+    if not ws_id:
+        ws_id = secrets.token_hex(16)
+        session['ws_id'] = ws_id
+    session.permanent = True
+    g.ws_id = ws_id
+    g.workspace_root = init_workspace(USER_DATA_DIR / ws_id)
+
 
 # ============================================================================
 # УТИЛИТЫ
 # ============================================================================
 
-def load_settings():
-    """Загружает настройки"""
-    settings_path = "settings.json"
-    if not os.path.exists(settings_path):
+def load_settings(workspace_root: Path):
+    """Загружает настройки из рабочей области сессии."""
+    settings_path = workspace_root / "settings.json"
+    if not settings_path.exists():
         return {
             "order_id_type": "digits",
             "order_id_length": 8,
@@ -209,20 +334,18 @@ def load_settings():
             "delay_max": 5
         }
 
-def save_settings(settings):
+def save_settings(workspace_root: Path, settings):
     """Сохраняет настройки"""
-    with open("settings.json", 'w', encoding='utf-8') as f:
+    with open(workspace_root / "settings.json", 'w', encoding='utf-8') as f:
         json.dump(settings, f, indent=2)
 
-def load_accounts():
+def load_accounts(workspace_root: Path):
     """Загружает все аккаунты Webflow"""
-    accounts_dir = "accounts"
-    if not os.path.exists(accounts_dir):
-        os.makedirs(accounts_dir, exist_ok=True)
-        return []
-    
+    accounts_dir = workspace_root / "accounts"
+    accounts_dir.mkdir(parents=True, exist_ok=True)
+
     accounts = []
-    for filepath in glob.glob(f"{accounts_dir}/account_*.json"):
+    for filepath in glob.glob(str(accounts_dir / "account_*.json")):
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 acc = json.load(f)
@@ -243,58 +366,60 @@ def load_accounts():
                 accounts.append(acc)
         except Exception:
             continue
-    
+
     return accounts
 
-def save_account(account):
+def save_account(workspace_root: Path, account):
     """Сохраняет аккаунт"""
+    accounts_dir = workspace_root / "accounts"
+    accounts_dir.mkdir(parents=True, exist_ok=True)
     filepath = account.get("_filepath")
     if not filepath:
-        accounts_dir = "accounts"
-        os.makedirs(accounts_dir, exist_ok=True)
         if "app_name" in account:
             safe_name = account['app_name'].replace(' ', '_').lower()
             safe_name = ''.join(c for c in safe_name if c.isalnum() or c == '_')
             filename = f"account_{safe_name}.json"
         else:
             filename = f"account_{int(time.time())}.json"
-        filepath = os.path.join(accounts_dir, filename)
-    
+        filepath = str(accounts_dir / filename)
+    else:
+        filepath = str(accounts_dir / Path(filepath).name)
+
     acc_copy = account.copy()
     acc_copy.pop("_filepath", None)
     acc_copy.pop("_filename", None)
-    
+
     with open(filepath, 'w', encoding='utf-8') as f:
         json.dump(acc_copy, f, indent=2, ensure_ascii=False)
 
-def add_log(message, level='info'):
+def add_log(workspace_root: Path, ws_id: str, message, level='info'):
     """Добавить сообщение в лог рассылки"""
+    progress_data = progress_for(ws_id)
     timestamp = datetime.now().strftime("%H:%M:%S")
     progress_data['logs'].append({
         'message': message,
         'level': level,
         'timestamp': timestamp
     })
-    # Write to log file
     try:
-        log_dir = "logs"
-        os.makedirs(log_dir, exist_ok=True)
-        log_file = os.path.join(log_dir, datetime.now().strftime("%Y-%m-%d") + ".log")
+        log_dir = workspace_root / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / (datetime.now().strftime("%Y-%m-%d") + ".log")
         with open(log_file, 'a', encoding='utf-8') as f:
             f.write(f"[{timestamp}] [{level.upper()}] {message}\n")
     except Exception:
         pass
 
-def record_analytics(account_name, total, success, failed):
+def record_analytics(workspace_root: Path, account_name, total, success, failed):
     """Record mailing analytics to analytics.json"""
     try:
-        analytics_path = "analytics.json"
-        if os.path.exists(analytics_path):
+        analytics_path = workspace_root / "analytics.json"
+        if analytics_path.exists():
             with open(analytics_path, 'r', encoding='utf-8') as f:
                 analytics = json.load(f)
         else:
             analytics = []
-        
+
         analytics.append({
             'date': datetime.now().strftime('%Y-%m-%d'),
             'time': datetime.now().strftime('%H:%M:%S'),
@@ -303,7 +428,7 @@ def record_analytics(account_name, total, success, failed):
             'success': success,
             'failed': failed
         })
-        
+
         with open(analytics_path, 'w', encoding='utf-8') as f:
             json.dump(analytics, f, indent=2, ensure_ascii=False)
     except Exception:
@@ -313,14 +438,15 @@ def record_analytics(account_name, total, success, failed):
 # ЛОГИКА МАССОВОЙ УСТАНОВКИ ШАБЛОНОВ
 # ============================================================================
 
-def run_bulk_template_set(mode, current_account_filename, subject, content, sender_name=''):
-    global template_setting_active, template_setting_logs
-    template_setting_active = True
-    template_setting_logs = []
-    
-    accounts = load_accounts()
+def run_bulk_template_set(workspace_root: Path, ws_id: str, mode, current_account_filename, subject, content, sender_name=''):
+    st = template_set_state(ws_id)
+    st['active'] = True
+    st['logs'] = []
+    logs = st['logs']
+
+    accounts = load_accounts(workspace_root)
     targets = []
-    
+
     if mode == 'current':
         acc = next((a for a in accounts if a["_filename"] == current_account_filename), None)
         if acc:
@@ -330,34 +456,35 @@ def run_bulk_template_set(mode, current_account_filename, subject, content, send
 
     for acc in targets:
         name = acc.get('app_name', 'Unknown')
-        template_setting_logs.append({"email": name, "status": "pending", "message": "Установка..."})
-        
+        logs.append({"email": name, "status": "pending", "message": "Установка..."})
+
         try:
             acc['template_subject'] = subject
             acc['template_content'] = content
             acc['sender_name'] = sender_name
-            save_account(acc)
-            
-            for log in template_setting_logs:
+            save_account(workspace_root, acc)
+
+            for log in logs:
                 if log["email"] == name:
                     log["status"] = "success"
                     log["message"] = "Успешно"
         except Exception as e:
-            for log in template_setting_logs:
+            for log in logs:
                 if log["email"] == name:
                     log["status"] = "error"
                     log["message"] = str(e)
-    
-    template_setting_active = False
+
+    st['active'] = False
 
 # ============================================================================
 # ЛОГИКА РАССЫЛКИ
 # ============================================================================
 
-def run_mailing(emails, mode, account_filename):
+def run_mailing(emails, mode, account_filename, workspace_root: Path, ws_id: str):
     """Запуск рассылки через WebflowMailer"""
-    global progress_data
-    
+    progress_data = progress_for(ws_id)
+    stop_flag = stop_event_for(ws_id)
+
     try:
         stop_flag.clear()
         progress_data['status'] = 'running'
@@ -368,23 +495,23 @@ def run_mailing(emails, mode, account_filename):
         progress_data['logs'] = []
         progress_data['start_time'] = time.time()
         progress_data['end_time'] = None
-        
-        accounts = load_accounts()
+
+        accounts = load_accounts(workspace_root)
         acc = next((a for a in accounts if a["_filename"] == account_filename), None)
-        
+
         if not acc:
-            add_log("#FORM_UPD Аккаунт не найден в системе", 'error')
-            progress_data['status'] = 'error'
-            return
-        
-        # Проверяем что шаблон не пустой
-        if not acc.get('template_content', '').strip():
-            add_log("TPL_EMPTY Шаблон не задан! Перейдите на вкладку 'Шаблон', выберите шаблон и нажмите 'Сохранить'", 'error')
+            add_log(workspace_root, ws_id, "#FORM_UPD Аккаунт не найден в системе", 'error')
             progress_data['status'] = 'error'
             return
 
-        add_log(f"Начало рассылки: {len(emails)} получателей | Режим {mode}", 'info')
-        
+        # Проверяем что шаблон не пустой
+        if not acc.get('template_content', '').strip():
+            add_log(workspace_root, ws_id, "TPL_EMPTY Шаблон не задан! Перейдите на вкладку 'Шаблон', выберите шаблон и нажмите 'Сохранить'", 'error')
+            progress_data['status'] = 'error'
+            return
+
+        add_log(workspace_root, ws_id, f"Начало рассылки: {len(emails)} получателей | Режим {mode}", 'info')
+
         def update_progress(current, total, success, failed, log_msg):
             if stop_flag.is_set():
                 raise InterruptedError("Рассылка остановлена пользователем")
@@ -393,65 +520,64 @@ def run_mailing(emails, mode, account_filename):
             progress_data['success'] = success
             progress_data['failed'] = failed
             level = 'success' if 'доставлен' in log_msg or 'завершен' in log_msg.lower() else ('error' if 'Ошибка' in log_msg else 'info')
-            add_log(log_msg, level)
+            add_log(workspace_root, ws_id, log_msg, level)
 
-        base_dir = Path(__file__).parent
-        
-        template_path = base_dir / "temp_template.txt"
+        template_path = workspace_root / "temp_template.txt"
         with open(template_path, "w", encoding="utf-8") as f:
             f.write(acc.get("template_content", ""))
 
         mailer = WebflowMailer(
-            config_path=str(base_dir / 'config.json'),
-            cookies_path=str(base_dir / 'cookies.json'),
+            config_path=str(workspace_root / 'config.json'),
+            cookies_path=str(workspace_root / 'cookies.json'),
             override_session_id=acc.get('session_id'),
             override_xsrf_token=acc.get('xsrf_token'),
             proxy=acc.get('proxy') or ''
         )
-        
+
         mailer.config['email_subject_main'] = acc.get('template_subject', 'Order Confirmation')
         mailer.template_main = acc.get('template_content', "")
         mailer.config['redirect_url'] = acc.get('redirect_url', '')
-        
+
         # Имя отправителя из аккаунта (если задано)
         if acc.get('sender_name'):
             mailer.config['email_sender_name'] = acc['sender_name']
-        
+
         # Передаём настройки для генерации order_id
-        settings = load_settings()
+        settings = load_settings(workspace_root)
         mailer.config['order_id_type'] = settings.get('order_id_type', 'digits')
         mailer.config['order_id_length'] = int(settings.get('order_id_length', 8))
-        
+
         mailer.send_mass_emails(emails, mode, progress_callback=update_progress)
-        
+
         progress_data['end_time'] = time.time()
         if stop_flag.is_set():
             progress_data['status'] = 'stopped'
-            add_log('STOP_USR Рассылка остановлена пользователем', 'info')
+            add_log(workspace_root, ws_id, 'STOP_USR Рассылка остановлена пользователем', 'info')
         else:
             progress_data['status'] = 'completed'
-            add_log(f'Рассылка завершена — ✅ {progress_data["success"]} | ❌ {progress_data["failed"]}', 'success')
-        
+            add_log(workspace_root, ws_id, f'Рассылка завершена — ✅ {progress_data["success"]} | ❌ {progress_data["failed"]}', 'success')
+
         # Обновляем статистику в файле аккаунта
         acc['emails_sent'] = acc.get('emails_sent', 0) + progress_data['success']
-        save_account(acc)
-        
+        save_account(workspace_root, acc)
+
         # Record analytics
         record_analytics(
+            workspace_root,
             acc.get('app_name', 'Unknown'),
             progress_data['total'],
             progress_data['success'],
             progress_data['failed']
         )
-        
+
     except InterruptedError:
         progress_data['end_time'] = time.time()
         progress_data['status'] = 'stopped'
-        add_log('STOP_USR Рассылка остановлена пользователем', 'info')
+        add_log(workspace_root, ws_id, 'STOP_USR Рассылка остановлена пользователем', 'info')
     except Exception as e:
         progress_data['end_time'] = time.time()
         progress_data['status'] = 'error'
-        add_log(f'NET_ERR Критическая ошибка: {str(e)}', 'error')
+        add_log(workspace_root, ws_id, f'NET_ERR Критическая ошибка: {str(e)}', 'error')
 
 # ============================================================================
 # API ROUTES
@@ -459,16 +585,25 @@ def run_mailing(emails, mode, account_filename):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    tier = detect_device_tier(request)
+    session['device_tier'] = tier
+    resp = make_response(
+        render_template('index.html', device_tier=tier)
+    )
+    resp.headers.setdefault(
+        'Accept-CH',
+        'Sec-CH-UA-Mobile, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version',
+    )
+    return resp
 
 @app.route('/api/accounts')
 def api_accounts():
-    return jsonify(load_accounts())
+    return jsonify(load_accounts(g.workspace_root))
 
 @app.route('/api/accounts/save', methods=['POST'])
 def api_save_account():
     data = request.json
-    save_account(data)
+    save_account(g.workspace_root, data)
     # Возвращаем имя файла для синхронизации
     if "app_name" in data and not data.get("_filepath"):
         safe_name = data['app_name'].replace(' ', '_').lower()
@@ -489,11 +624,11 @@ def api_update_account_field():
     if not filename or not field:
         return jsonify({"success": False, "error": "Missing filename or field"})
     
-    accounts = load_accounts()
+    accounts = load_accounts(g.workspace_root)
     acc = next((a for a in accounts if a["_filename"] == filename), None)
     if acc:
         acc[field] = value
-        save_account(acc)
+        save_account(g.workspace_root, acc)
         return jsonify({"success": True})
     return jsonify({"success": False, "error": "Account not found"})
 
@@ -505,14 +640,15 @@ def api_sync_account_to_config():
     if not filename:
         return jsonify({"success": False, "error": "No filename"})
     
-    accounts = load_accounts()
+    accounts = load_accounts(g.workspace_root)
     acc = next((a for a in accounts if a["_filename"] == filename), None)
     if not acc:
         return jsonify({"success": False, "error": "Account not found"})
     
     try:
-        if os.path.exists('config.json'):
-            with open('config.json', 'r', encoding='utf-8') as f:
+        cfg_path = g.workspace_root / 'config.json'
+        if cfg_path.exists():
+            with open(cfg_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
         else:
             config = {}
@@ -526,7 +662,7 @@ def api_sync_account_to_config():
             changed = True
         
         if changed:
-            with open('config.json', 'w', encoding='utf-8') as f:
+            with open(cfg_path, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=4, ensure_ascii=False)
         
         return jsonify({"success": True})
@@ -539,7 +675,7 @@ def api_get_account():
     filename = request.args.get('filename')
     if not filename:
         return jsonify({"success": False, "error": "No filename"})
-    accounts = load_accounts()
+    accounts = load_accounts(g.workspace_root)
     acc = next((a for a in accounts if a["_filename"] == filename), None)
     if acc:
         return jsonify({"success": True, "account": acc})
@@ -552,15 +688,15 @@ def api_delete_account():
     if not filename:
         return jsonify({"success": False, "error": "No filename"})
     
-    filepath = os.path.join("accounts", filename)
-    if os.path.exists(filepath):
+    filepath = g.workspace_root / "accounts" / filename
+    if filepath.exists():
         os.remove(filepath)
         return jsonify({"success": True})
     return jsonify({"success": False, "error": "File not found"})
 
 @app.route('/api/accounts/delete-all', methods=['POST'])
 def api_delete_all_accounts():
-    for f in glob.glob("accounts/account_*.json"):
+    for f in glob.glob(str(g.workspace_root / "accounts" / "account_*.json")):
         os.remove(f)
     return jsonify({"success": True})
 
@@ -570,11 +706,11 @@ def api_rename_app():
     filename = data.get('filename')
     new_name = data.get('name')
     
-    accounts = load_accounts()
+    accounts = load_accounts(g.workspace_root)
     acc = next((a for a in accounts if a["_filename"] == filename), None)
     if acc:
         acc['app_name'] = new_name
-        save_account(acc)
+        save_account(g.workspace_root, acc)
         return jsonify({"success": True})
     return jsonify({"success": False, "error": "Account not found"})
 
@@ -584,11 +720,11 @@ def api_update_proxy():
     filename = data.get('filename')
     proxy = data.get('proxy')
     
-    accounts = load_accounts()
+    accounts = load_accounts(g.workspace_root)
     acc = next((a for a in accounts if a["_filename"] == filename), None)
     if acc:
         acc['proxy'] = proxy
-        save_account(acc)
+        save_account(g.workspace_root, acc)
         return jsonify({"success": True})
     return jsonify({"success": False, "error": "Account not found"})
 
@@ -629,7 +765,7 @@ def api_load_template():
     if not acc_file:
         return jsonify({"success": False, "error": "No account"})
     
-    accounts = load_accounts()
+    accounts = load_accounts(g.workspace_root)
     acc = next((a for a in accounts if a["_filename"] == acc_file), None)
     if acc:
         return jsonify({
@@ -648,13 +784,13 @@ def api_save_template():
     content = data.get('content')
     sender_name = data.get('sender_name', '')
     
-    accounts = load_accounts()
+    accounts = load_accounts(g.workspace_root)
     acc = next((a for a in accounts if a["_filename"] == acc_file), None)
     if acc:
         acc['template_subject'] = subject
         acc['template_content'] = content
         acc['sender_name'] = sender_name
-        save_account(acc)
+        save_account(g.workspace_root, acc)
         return jsonify({"success": True})
     return jsonify({"success": False, "error": "Account not found"})
 
@@ -667,30 +803,35 @@ def api_set_template():
     content = data.get('content')
     sender_name = data.get('sender_name', '')
     
-    thread = threading.Thread(target=run_bulk_template_set, args=(mode, current_account, subject, content, sender_name))
+    wr = Path(g.workspace_root)
+    thread = threading.Thread(
+        target=run_bulk_template_set,
+        args=(wr, g.ws_id, mode, current_account, subject, content, sender_name),
+    )
     thread.daemon = True
     thread.start()
     return jsonify({"success": True})
 
 @app.route('/api/template/set-logs')
 def api_template_set_logs():
-    return jsonify({"active": template_setting_active, "logs": template_setting_logs})
+    st = template_set_state(g.ws_id)
+    return jsonify({"active": st['active'], "logs": st['logs']})
 
-CUSTOM_TEMPLATES_PATH = "custom_templates.json"
 
-def load_custom_templates() -> list[dict]:
+def load_custom_templates(workspace_root: Path) -> list[dict]:
     """Загружает пользовательские шаблоны из JSON."""
-    if not os.path.exists(CUSTOM_TEMPLATES_PATH):
+    path = workspace_root / 'custom_templates.json'
+    if not path.exists():
         return []
     try:
-        with open(CUSTOM_TEMPLATES_PATH, 'r', encoding='utf-8') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return []
 
-def save_custom_templates(templates: list[dict]) -> None:
+def save_custom_templates(workspace_root: Path, templates: list[dict]) -> None:
     """Сохраняет пользовательские шаблоны в JSON."""
-    with open(CUSTOM_TEMPLATES_PATH, 'w', encoding='utf-8') as f:
+    with open(workspace_root / 'custom_templates.json', 'w', encoding='utf-8') as f:
         json.dump(templates, f, indent=2, ensure_ascii=False)
 
 @app.route('/api/templates/list')
@@ -725,7 +866,7 @@ def api_list_templates():
             'custom': False
         })
 
-    for ct in load_custom_templates():
+    for ct in load_custom_templates(g.workspace_root):
         templates.append({
             'filename': f"__custom__{ct['id']}",
             'key': ct['id'],
@@ -756,7 +897,7 @@ def api_save_custom_template():
     if missing:
         return jsonify({"success": False, "error": f"Заполните: {', '.join(missing)}"}), 400
 
-    templates = load_custom_templates()
+    templates = load_custom_templates(g.workspace_root)
 
     if template_id:
         found = False
@@ -784,7 +925,7 @@ def api_save_custom_template():
             'subject': subject
         })
 
-    save_custom_templates(templates)
+    save_custom_templates(g.workspace_root, templates)
     return jsonify({"success": True, "id": template_id})
 
 @app.route('/api/templates/custom/delete', methods=['POST'])
@@ -795,13 +936,13 @@ def api_delete_custom_template():
     if not template_id:
         return jsonify({"success": False, "error": "ID не указан"}), 400
 
-    templates = load_custom_templates()
+    templates = load_custom_templates(g.workspace_root)
     before = len(templates)
     templates = [t for t in templates if t['id'] != template_id]
     if len(templates) == before:
         return jsonify({"success": False, "error": "Шаблон не найден"}), 404
 
-    save_custom_templates(templates)
+    save_custom_templates(g.workspace_root, templates)
     return jsonify({"success": True})
 
 @app.route('/api/templates/custom/get')
@@ -811,7 +952,7 @@ def api_get_custom_template():
     if not template_id:
         return jsonify({"success": False, "error": "ID не указан"})
 
-    for t in load_custom_templates():
+    for t in load_custom_templates(g.workspace_root):
         if t['id'] == template_id:
             return jsonify({"success": True, "content": t['content'], "name": t['name'],
                             "color": t['color'], "icon": t.get('icon', 'mail'),
@@ -826,7 +967,7 @@ def api_load_template_file():
 
     if filename.startswith('__custom__'):
         template_id = filename.replace('__custom__', '')
-        for t in load_custom_templates():
+        for t in load_custom_templates(g.workspace_root):
             if t['id'] == template_id:
                 return jsonify({"success": True, "content": t['content'],
                                 "subject": t.get('subject', ''),
@@ -851,26 +992,26 @@ def api_set_redirect():
     data = request.json
     url = data.get('url', '')
     
-    accounts = load_accounts()
+    accounts = load_accounts(g.workspace_root)
     for acc in accounts:
         acc['redirect_url'] = url
-        save_account(acc)
+        save_account(g.workspace_root, acc)
     
     return jsonify({"success": True, "updated": len(accounts)})
 
 @app.route('/api/settings/load')
 def api_load_settings():
-    return jsonify(load_settings())
+    return jsonify(load_settings(g.workspace_root))
 
 @app.route('/api/settings/save', methods=['POST'])
 def api_save_settings():
-    save_settings(request.json)
+    save_settings(g.workspace_root, request.json)
     return jsonify({"success": True})
 
 @app.route('/api/config/load')
 def api_load_config():
     try:
-        with open('config.json', 'r', encoding='utf-8') as f:
+        with open(g.workspace_root / 'config.json', 'r', encoding='utf-8') as f:
             return jsonify(json.load(f))
     except Exception:
         return jsonify({})
@@ -883,27 +1024,28 @@ def api_save_config():
         # Если передана designer_session, обновляем cookies.json отдельно
         designer_session = data.pop('designer_session', None)
         if designer_session and designer_session.strip():
-            update_designer_cookie(designer_session.strip())
+            update_designer_cookie(g.workspace_root, designer_session.strip())
         
-        if os.path.exists('config.json'):
-            with open('config.json', 'r', encoding='utf-8') as f:
+        cfg_path = g.workspace_root / 'config.json'
+        if cfg_path.exists():
+            with open(cfg_path, 'r', encoding='utf-8') as f:
                 current_config = json.load(f)
         else:
             current_config = {}
         
         current_config.update(data)
         
-        with open('config.json', 'w', encoding='utf-8') as f:
+        with open(cfg_path, 'w', encoding='utf-8') as f:
             json.dump(current_config, f, indent=4, ensure_ascii=False)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-def update_designer_cookie(value):
+def update_designer_cookie(workspace_root: Path, value):
     """Обновляет wfdesignersession в cookies.json"""
-    cookies_path = "cookies.json"
+    cookies_path = workspace_root / "cookies.json"
     try:
-        if os.path.exists(cookies_path):
+        if cookies_path.exists():
             with open(cookies_path, 'r', encoding='utf-8') as f:
                 cookies = json.load(f)
         else:
@@ -919,7 +1061,7 @@ def update_designer_cookie(value):
         if not found:
             config_domain = ""
             try:
-                with open('config.json', 'r', encoding='utf-8') as cf:
+                with open(workspace_root / 'config.json', 'r', encoding='utf-8') as cf:
                     config_domain = json.load(cf).get('design_host', '')
             except Exception:
                 pass
@@ -1070,20 +1212,20 @@ def api_random_vars():
     redirect_url = ''
     
     if acc_file:
-        accounts = load_accounts()
+        accounts = load_accounts(g.workspace_root)
         acc = next((a for a in accounts if a["_filename"] == acc_file), None)
         if acc and acc.get('redirect_url'):
             redirect_url = acc['redirect_url']
     
     if not redirect_url:
         try:
-            with open('config.json', 'r', encoding='utf-8') as f:
+            with open(g.workspace_root / 'config.json', 'r', encoding='utf-8') as f:
                 cfg = json.load(f)
             redirect_url = cfg.get('redirect_url', '')
         except Exception:
             pass
     
-    result = generate_random_vars(redirect_url=redirect_url)
+    result = generate_random_vars(load_settings(g.workspace_root), redirect_url=redirect_url)
     return jsonify(result)
 
 @app.route('/api/send', methods=['POST'])
@@ -1099,7 +1241,11 @@ def api_send_emails():
     if not account_filename:
         return jsonify({'error': 'Аккаунт не выбран'}), 400
     
-    thread = threading.Thread(target=run_mailing, args=(emails, mode, account_filename))
+    wr = Path(g.workspace_root)
+    thread = threading.Thread(
+        target=run_mailing,
+        args=(emails, mode, account_filename, wr, g.ws_id),
+    )
     thread.daemon = True
     thread.start()
     
@@ -1108,12 +1254,12 @@ def api_send_emails():
 @app.route('/api/stop', methods=['POST'])
 def api_stop_sending():
     """Остановить текущую рассылку"""
-    stop_flag.set()
+    stop_event_for(g.ws_id).set()
     return jsonify({"success": True})
 
 @app.route('/api/status')
 def get_status():
-    data = dict(progress_data)
+    data = dict(progress_for(g.ws_id))
     # Compute elapsed seconds
     if data['start_time']:
         if data['end_time']:
@@ -1128,8 +1274,9 @@ def get_status():
 def api_analytics_data():
     """Return analytics data"""
     try:
-        if os.path.exists('analytics.json'):
-            with open('analytics.json', 'r', encoding='utf-8') as f:
+        ap = g.workspace_root / 'analytics.json'
+        if ap.exists():
+            with open(ap, 'r', encoding='utf-8') as f:
                 return jsonify(json.load(f))
         return jsonify([])
     except Exception:
@@ -1138,10 +1285,10 @@ def api_analytics_data():
 @app.route('/api/logs/list')
 def api_logs_list():
     """List available log files"""
-    log_dir = "logs"
-    if not os.path.exists(log_dir):
+    log_dir = g.workspace_root / "logs"
+    if not log_dir.exists():
         return jsonify([])
-    files = sorted(glob.glob(f"{log_dir}/*.log"), reverse=True)
+    files = sorted(glob.glob(str(log_dir / "*.log")), reverse=True)
     result = [os.path.basename(f).replace('.log', '') for f in files]
     return jsonify(result)
 
@@ -1151,19 +1298,98 @@ def api_logs_view():
     date = request.args.get('date')
     if not date:
         return jsonify({"success": False, "error": "No date"})
-    log_file = os.path.join("logs", f"{date}.log")
-    if not os.path.exists(log_file):
+    log_file = g.workspace_root / "logs" / f"{date}.log"
+    if not log_file.exists():
         return jsonify({"success": False, "error": "Log not found"})
     try:
-        with open(log_file, 'r', encoding='utf-8') as f:
+        with open(str(log_file), 'r', encoding='utf-8') as f:
             content = f.read()
         return jsonify({"success": True, "content": content})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+def _quiet_werkzeug() -> None:
+    import logging
+
+    for name in ('werkzeug', 'werkzeug.serving'):
+        logging.getLogger(name).setLevel(logging.ERROR)
+
+
+def _startup_urls(port: int):
+    import re
+    import socket
+    import subprocess
+
+    ips: set[str] = set()
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0.3)
+        s.connect(('8.8.8.8', 80))
+        ips.add(s.getsockname()[0])
+        s.close()
+    except OSError:
+        pass
+    try:
+        host = socket.gethostname()
+        for res in socket.getaddrinfo(host, None, socket.AF_INET):
+            a = res[4][0]
+            if a and not a.startswith('127.'):
+                ips.add(a)
+    except OSError:
+        pass
+    if os.name == 'nt':
+        try:
+            r = subprocess.run(
+                ['ipconfig'],
+                capture_output=True,
+                text=True,
+                timeout=8,
+                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+            )
+            for m in re.finditer(r'IPv4[^:\r\n]*:\s*(\d{1,3}(?:\.\d{1,3}){3})', r.stdout, re.I):
+                a = m.group(1)
+                if not a.startswith('127.'):
+                    ips.add(a)
+        except (subprocess.SubprocessError, FileNotFoundError):
+            pass
+
+    def _looks_virtual(ip: str) -> bool:
+        p = ip.split('.')
+        if len(p) != 4:
+            return False
+        try:
+            a, b = int(p[0]), int(p[1])
+        except ValueError:
+            return False
+        return a == 172 and 16 <= b <= 31
+
+    usable = sorted(i for i in ips if not _looks_virtual(i))
+    skip = sorted(i for i in ips if _looks_virtual(i))
+    return usable, skip
+
+
+def _print_startup_banner(port: int) -> None:
+    usable, skip = _startup_urls(port)
+    line = '─' * 44
+    print(line)
+    print(f' WebFlow Sender   http://127.0.0.1:{port}')
+    if usable:
+        print(' С телефона (LAN, только http://): ' + ' · '.join(f'http://{ip}:{port}' for ip in usable))
+    else:
+        print(' С телефона: ipconfig → IPv4 Wi‑Fi/Ethernet → http://IP:' + str(port))
+    if skip:
+        print(' Не с телефона: ' + ', '.join(skip) + ' (туннель/VPN)')
+    print(' Логи запросов: по умолчанию скрыты; ошибки HTTP — видны.')
+    print(line)
+
+
 if __name__ == '__main__':
-    print('WebFlow Mass Email Sender Pro')
-    print('http://localhost:5000')
+    _quiet_werkzeug()
+    port = int(os.environ.get('PORT', '5000'))
+    _DEV_DEBUG = os.environ.get('FLASK_DEBUG', '1').lower() not in ('0', 'false', 'no')
+    # До app.run() у app.debug ещё False; reloader: баннер только в дочернем процессе
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not _DEV_DEBUG:
+        _print_startup_banner(port)
     os.makedirs("accounts", exist_ok=True)
     os.makedirs("logs", exist_ok=True)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=_DEV_DEBUG, host='0.0.0.0', port=port)

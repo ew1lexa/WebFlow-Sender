@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-server-device="{{ device_tier|default('desktop') }}">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>WebFlow Sender</title>
     <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -65,6 +67,8 @@
         /* Animated background */
         .bg-mesh {
             position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+            isolation:isolate;
+            transform:translateZ(0);
         }
 
         .bg-orb {
@@ -299,6 +303,8 @@
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -317,6 +323,10 @@
         @keyframes pageReveal {
             from { opacity:0; transform:translateY(12px) scale(0.99); filter:blur(4px); }
             to   { opacity:1; transform:translateY(0) scale(1); filter:blur(0); }
+        }
+        @keyframes pageRevealMobile {
+            from { opacity:0; transform:translateY(12px) scale(0.99); }
+            to   { opacity:1; transform:translateY(0) scale(1); }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .spin { animation: spin 0.8s linear infinite; }
@@ -344,6 +354,22 @@
             from { opacity:0; transform:translateX(-20px); filter:blur(4px); }
             to   { opacity:1; transform:translateX(0); filter:blur(0); }
         }
+        @keyframes titleSlideMobile {
+            from { opacity:0; transform:translateX(-20px); }
+            to   { opacity:1; transform:translateX(0); }
+        }
+        html[data-server-device="mobile"] .page.active,
+        html[data-server-device="tablet"] .page.active,
+        html[data-device="mobile"] .page.active,
+        html[data-device="tablet"] .page.active { animation-name: pageRevealMobile; }
+        html[data-server-device="mobile"] .page-title,
+        html[data-server-device="mobile"] .page-desc,
+        html[data-server-device="tablet"] .page-title,
+        html[data-server-device="tablet"] .page-desc,
+        html[data-device="mobile"] .page-title,
+        html[data-device="mobile"] .page-desc,
+        html[data-device="tablet"] .page-title,
+        html[data-device="tablet"] .page-desc { animation-name: titleSlideMobile; }
         .page-desc {
             font-size: 15px;
             color: var(--text-secondary);
@@ -2057,11 +2083,505 @@
         .section:has(.send-errref-body.open) .send-errref-arrow {
             transform: rotate(90deg);
         }
+
+        /* ═══ Responsive: телефон / узкий экран ═══ */
+        .mobile-header,
+        .sidebar-backdrop {
+            display: none;
+        }
+
+        /* Узкий экран ИЛИ тач-планшет до 1200px — общий «компактный» интерфейс */
+        @media (max-width: 900px), screen and (max-width: 1200px) and (pointer: coarse) {
+            html {
+                height: 100%;
+                -webkit-text-size-adjust: 100%;
+            }
+            body {
+                height: 100%;
+                min-height: 100dvh;
+            }
+            .app {
+                min-height: 100dvh;
+            }
+            .mobile-header {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+                align-self: stretch;
+                padding: 6px 12px;
+                padding-top: max(6px, env(safe-area-inset-top));
+                padding-bottom: 6px;
+                padding-left: max(12px, env(safe-area-inset-left));
+                padding-right: max(12px, env(safe-area-inset-right));
+                min-height: 0;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                background: color-mix(in srgb, var(--bg-raised) 92%, transparent);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+            .mobile-header h1 {
+                flex: 1;
+                font-size: 14px;
+                font-weight: 700;
+                letter-spacing: -0.02em;
+                line-height: 1.2;
+                margin: 0;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .mobile-header .theme-toggle-compact {
+                width: 34px;
+                height: 34px;
+                min-width: 34px;
+                border-radius: 8px;
+                flex-shrink: 0;
+            }
+            .mobile-header .theme-toggle-compact svg,
+            .mobile-header .theme-toggle-icon svg {
+                width: 14px !important;
+                height: 14px !important;
+            }
+            .btn-mobile-menu {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 34px;
+                height: 34px;
+                min-width: 34px;
+                padding: 0;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: rgba(255,255,255,0.04);
+                color: var(--text-secondary);
+                flex-shrink: 0;
+                font-family: inherit;
+                transition: all var(--transition);
+            }
+            .btn-mobile-menu .ico {
+                width: 18px;
+                height: 18px;
+            }
+            .btn-mobile-menu:active {
+                transform: scale(0.96);
+            }
+            .sidebar-backdrop {
+                display: block;
+                position: fixed;
+                inset: 0;
+                z-index: 2400;
+                background: rgba(0,0,0,0.45);
+                backdrop-filter: blur(4px);
+                -webkit-backdrop-filter: blur(4px);
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+                transition: opacity 0.28s ease, visibility 0.28s;
+            }
+            body.mobile-nav-open .sidebar-backdrop {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: min(300px, 88vw);
+                min-width: unset;
+                z-index: 2500;
+                transform: translateX(-102%);
+                transition: transform 0.32s cubic-bezier(.25, .1, .25, 1);
+                box-shadow: 8px 0 40px rgba(0,0,0,0.35);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            body.mobile-nav-open .sidebar {
+                transform: translateX(0);
+            }
+            .sidebar-brand {
+                padding-top: max(20px, env(safe-area-inset-top));
+                padding-left: max(20px, env(safe-area-inset-left));
+            }
+            .sidebar-footer {
+                padding-bottom: max(16px, env(safe-area-inset-bottom));
+            }
+            .main {
+                flex: 1;
+                min-height: 0;
+                width: 100%;
+                max-width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .content {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+                padding: 20px 16px;
+                padding-bottom: max(24px, env(safe-area-inset-bottom));
+                flex: 1;
+            }
+            .page-title {
+                font-size: 22px;
+            }
+            .page-desc {
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+            .flex-between.mb-24 {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .stat-grid {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+            .accounts-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .tpl-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            .send-grid {
+                grid-template-columns: 1fr !important;
+                gap: 16px;
+            }
+            .section-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .section-header .flex.gap-8 {
+                width: 100%;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+            .action-bar {
+                flex-wrap: wrap;
+                padding: 12px 14px;
+            }
+            .action-bar-spacer {
+                display: none;
+            }
+            .action-bar .btn {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+            .timer-display {
+                font-size: 42px;
+            }
+            .timer-sub-row {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            #analytics-chart {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 8px;
+                max-width: 100%;
+            }
+            #analytics-chart .chart-bar {
+                min-width: 18px;
+            }
+            .modal-box, .modal-box-wide {
+                width: min(100%, 100vw - 24px);
+                max-height: min(90dvh, 92vh);
+                margin: 12px;
+                padding: 20px 18px;
+                overflow-y: auto;
+            }
+            .modal-box-wide {
+                height: auto;
+                max-height: min(90dvh, 92vh);
+            }
+            #toast-container {
+                top: auto;
+                bottom: max(16px, env(safe-area-inset-bottom));
+                right: 12px;
+                left: 12px;
+                align-items: stretch;
+            }
+            #toast-container > div {
+                max-width: none !important;
+            }
+            .card:hover {
+                transform: none;
+            }
+            .tpl-card .tpl-actions {
+                opacity: 1;
+            }
+
+            /* ——— Жёсткие лимиты ширины, без гориз. скролла страницы ——— */
+            html, body {
+                overflow-x: hidden;
+                max-width: 100vw;
+            }
+            .app, .main {
+                overflow-x: hidden;
+                max-width: 100%;
+            }
+            .content, .page {
+                max-width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+            }
+            .card, .stat-box, .modal-box, .modal-box-wide {
+                max-width: 100%;
+                min-width: 0;
+            }
+
+            /* iOS: 16px в полях — не зумить при фокусе */
+            input:not([type="checkbox"]):not([type="radio"]),
+            textarea,
+            select,
+            .stepper input[type="number"] {
+                font-size: 16px !important;
+            }
+            textarea#template-content {
+                font-size: 13px !important;
+                min-height: 260px !important;
+            }
+            .log-box {
+                font-size: 12px !important;
+                min-height: 200px !important;
+                max-height: 50vh !important;
+            }
+
+            .account-proxy {
+                word-break: break-all;
+                font-size: 11px;
+            }
+            .nav-item {
+                min-height: 44px;
+                padding-top: 12px;
+                padding-bottom: 12px;
+            }
+
+            /* Сетки с классами (раньше ломались из inline) */
+            .template-editor-split,
+            .analytics-layout {
+                grid-template-columns: 1fr !important;
+                gap: 20px !important;
+            }
+            .mailing-params-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .site-config-fields {
+                grid-template-columns: 1fr !important;
+            }
+            .analytics-mini-stats {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            .url-parse-row {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+            }
+            .url-parse-row #btn-parse-url {
+                width: 100%;
+                justify-content: center;
+                white-space: normal !important;
+            }
+            .settings-notify-card {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 14px !important;
+                text-align: center;
+            }
+            .settings-notify-card #btn-notifications {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .mode-group {
+                flex-direction: column !important;
+                gap: 10px !important;
+            }
+            .mode-opt {
+                width: 100% !important;
+                min-height: 52px;
+                text-align: left;
+            }
+
+            .send-account-strip {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .preview-panel-header {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 10px;
+            }
+            .preview-panel-actions {
+                width: 100%;
+                justify-content: flex-start;
+                flex-wrap: wrap;
+            }
+            .preview-panel-actions button {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+
+            #page-template .section-header:has(.template-editor-tab) {
+                flex-wrap: wrap;
+            }
+            #page-template .section-header .flex.gap-8 {
+                width: 100%;
+                margin-top: 4px;
+            }
+            #page-template .section-header .flex.gap-8 .btn {
+                flex: 1 1 0;
+                min-width: 0;
+            }
+
+            .color-palette {
+                grid-template-columns: repeat(auto-fill, 28px) !important;
+                justify-content: start;
+                gap: 6px !important;
+            }
+            .color-swatch {
+                width: 28px !important;
+                height: 28px !important;
+            }
+            .icon-palette {
+                grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+                gap: 6px !important;
+            }
+            .icon-swatch {
+                width: 100% !important;
+                min-width: 0;
+                height: 38px !important;
+            }
+
+            .cpicker-modal {
+                max-width: 100% !important;
+                padding: 18px 14px !important;
+            }
+            .cpicker-channel {
+                grid-template-columns: 20px 1fr 48px !important;
+                gap: 8px !important;
+            }
+
+            #page-analytics .section-header:has(.custom-select-logs) {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            #page-analytics .custom-select-logs {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                margin-top: 6px;
+            }
+
+            .modal .flex.gap-12 {
+                flex-direction: column;
+            }
+            .modal .flex.gap-12 .btn {
+                width: 100%;
+            }
+
+            .fullscreen-preview-body {
+                max-height: 70dvh;
+            }
+
+            .chart-bar-label {
+                font-size: 7px;
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .tpl-grid {
+                gap: 10px !important;
+            }
+            .tpl-name {
+                white-space: normal !important;
+                font-size: 11px;
+                line-height: 1.25;
+                max-height: 2.5em;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            /* Таблица справочника — скролл по X */
+            .send-errref-body table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .badge {
+                max-width: 100%;
+                word-break: break-word;
+            }
+        }
+
+        @media (max-width: 480px), screen and (max-width: 640px) and (pointer: coarse) {
+            .tpl-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .analytics-mini-stats {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Производительность: меньше работы GPU на тач/узком экране; вид почти как «первый кадр» анимации */
+        @media (max-width: 900px), (pointer: coarse) {
+            .bg-orb-1, .bg-orb-2, .bg-orb-3, .bg-orb-4,
+            .bg-aurora { animation: none !important; }
+            .bg-orb-1 { filter: blur(52px) !important; }
+            .bg-orb-2 { filter: blur(58px) !important; }
+            .bg-orb-3 { filter: blur(64px) !important; }
+            .bg-orb-4 { filter: blur(70px) !important; }
+            .bg-aurora { filter: blur(26px) !important; }
+            .bg-spotlight { filter: blur(42px) !important; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bg-orb-1, .bg-orb-2, .bg-orb-3, .bg-orb-4,
+            .bg-aurora { animation: none !important; }
+        }
+
+        @media (max-width: 900px), (pointer: coarse) {
+            *, *::before, *::after,
+            html, body, input, textarea, select, option, button, a, label, div, span, p, h1, h2, h3, h4, h5, h6, iframe {
+                cursor: auto !important;
+            }
+            .cursor-glow,
+            .cursor-dot,
+            .cursor-ring {
+                display: none !important;
+                visibility: hidden !important;
+            }
+        }
+
+        [data-theme="light"] .mobile-header {
+            background: rgba(255,255,255,0.92);
+            border-bottom-color: rgba(0,0,0,0.06);
+        }
+        [data-theme="light"] .btn-mobile-menu {
+            background: rgba(0,0,0,0.03);
+            border-color: rgba(0,0,0,0.08);
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
     <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
         <defs>
+            <symbol id="ico-menu" viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
             <symbol id="ico-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M4 20v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/></symbol>
             <symbol id="ico-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
             <symbol id="ico-loader" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></symbol>
@@ -2127,12 +2647,13 @@
     </div>
 
     <div class="app">
+        <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeMobileNav()" aria-hidden="true"></div>
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="app-sidebar">
             <div class="sidebar-brand">
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                     <h1>WebFlow Sender</h1>
-                    <button class="theme-toggle-compact" id="theme-toggle-icon" onclick="toggleTheme()" title="Сменить тему"></button>
+                    <button type="button" class="theme-toggle-compact theme-toggle-icon" onclick="toggleTheme(event)" title="Сменить тему"></button>
                 </div>
                 <span>mass mailer pro</span>
                 </div>
@@ -2156,6 +2677,13 @@
 
         <!-- Main -->
         <div class="main">
+            <header class="mobile-header" aria-label="Мобильная навигация">
+                <button type="button" class="btn-mobile-menu" id="btn-mobile-menu" onclick="toggleMobileNav()" title="Меню" aria-expanded="false" aria-controls="app-sidebar">
+                    <svg class="ico" aria-hidden="true"><use href="#ico-menu"/></svg>
+                </button>
+                <h1 id="mobile-page-title">Аккаунты</h1>
+                <button type="button" class="theme-toggle-compact theme-toggle-icon" onclick="toggleTheme(event)" title="Сменить тему"></button>
+            </header>
             <div class="content">
 
                 <!-- ACCOUNTS -->
@@ -2224,7 +2752,7 @@
                     </div>
 
                     <!-- Отправитель + Тема | Переменные — side by side -->
-                    <div class="grid-2" style="gap:24px; align-items:start;">
+                    <div class="grid-2 template-editor-split" style="gap:24px; align-items:start;">
                         <!-- Left: Отправитель и тема -->
                         <div class="section" style="margin-bottom:0;">
                             <div class="section-header">
@@ -2358,7 +2886,7 @@
                                 <div style="font-size:12px; color:var(--text-secondary); margin-bottom:14px; line-height:1.6;">
                                     Вставьте ссылку на опубликованный сайт — Site ID, Page ID, Element ID и API-адреса заполнятся из кода страницы.
                                 </div>
-                                <div style="display:flex; gap:10px; align-items:center;">
+                                <div class="url-parse-row" style="display:flex; gap:10px; align-items:center;">
                                     <input type="text" id="url-parse-input"
                                            placeholder="https://your-site.webflow.io"
                                            autocomplete="off" style="flex:1;">
@@ -2377,7 +2905,7 @@
                             <svg class="ico"><use href="#ico-gear"/></svg>
                             <span class="section-title">Параметры рассылки</span>
                         </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; overflow:visible;">
+                        <div class="mailing-params-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; overflow:visible;">
                             <div class="card" style="overflow:visible; position:relative; z-index:10;">
                                 <div class="card-title">Формат Order ID</div>
                                 <input type="hidden" id="setting-order-type" value="digits">
@@ -2441,7 +2969,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="card settings-notify-card" style="display:flex; justify-content:space-between; align-items:center;">
                                 <div>
                                     <div class="card-title" style="margin-bottom:6px;">Уведомления</div>
                                     <div style="font-size:11px; color:var(--text-tertiary);">Звук при завершении и ошибках</div>
@@ -2460,7 +2988,7 @@
                             <span style="font-size:10px; color:var(--text-tertiary);">заполняется автоматически</span>
                         </div>
                         <div class="card">
-                            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px 16px;">
+                            <div class="site-config-fields" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px 16px;">
                                 <div class="form-group" style="margin-bottom:0;"><label class="form-label">Site ID</label><input type="text" id="engine-site-id" autocomplete="off"></div>
                                 <div class="form-group" style="margin-bottom:0;"><label class="form-label">Element ID</label><input type="text" id="engine-element-id" autocomplete="off"></div>
                                 <div class="form-group" style="margin-bottom:0;"><label class="form-label">Page ID</label><input type="text" id="engine-page-id" autocomplete="off"></div>
@@ -2695,14 +3223,14 @@
                     <p class="page-desc">Статистика рассылок и логи</p>
 
                     <!-- Stats + Chart side by side -->
-                    <div class="grid-2" style="gap:24px; align-items:start; grid-template-columns:1fr 2fr;">
+                    <div class="grid-2 analytics-layout" style="gap:24px; align-items:start; grid-template-columns:1fr 2fr;">
                         <!-- Left: Stats 2x2 -->
                         <div class="section" style="margin-bottom:0;">
                             <div class="section-header">
                                 <svg class="ico"><use href="#ico-chart"/></svg>
                                 <span class="section-title">Обзор</span>
                             </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                            <div class="analytics-mini-stats" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                                 <div class="stat-box liquid-glass-stat"><div class="stat-label">Всего</div><div class="stat-num text-primary" id="analytics-total">0</div></div>
                                 <div class="stat-box liquid-glass-stat"><div class="stat-label">Успешных</div><div class="stat-num text-success" id="analytics-success">0</div></div>
                                 <div class="stat-box liquid-glass-stat"><div class="stat-label">Ошибок</div><div class="stat-num text-danger" id="analytics-failed">0</div></div>
@@ -2924,7 +3452,7 @@
     <div class="cursor-dot" id="cursor-dot"></div>
     <div class="cursor-ring" id="cursor-ring"></div>
 
-    <script src="/static/script.js?v={{ range(100000) | random }}"></script>
+    <script src="/static/script.js?v=8"></script>
     <script>
         function stepValue(id, delta, min, max) {
             const input = document.getElementById(id);
@@ -2976,9 +3504,14 @@
 
         // Custom cursor with magnetic effect, trail, click burst, text mode, velocity stretch
         (function() {
+            if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                document.querySelectorAll('.cursor-glow, .cursor-dot, .cursor-ring').forEach(el => el.remove());
+                return;
+            }
             const glow = document.getElementById('cursor-glow');
             const dot = document.getElementById('cursor-dot');
             const ring = document.getElementById('cursor-ring');
+            if (!glow || !dot || !ring) return;
             let mx = 0, my = 0;
             let dx = 0, dy = 0;
             let rx = 0, ry = 0;

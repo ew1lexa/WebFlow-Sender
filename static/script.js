@@ -10,6 +10,8 @@ let timerInterval = null;
 let timerStartTime = null;
 let timerElapsedFromServer = 0;
 let timerIsSynced = false;
+let _pollLastLogKey = '';
+let _pollLastPct = -1;
 
 // ============================================================================
 // THEME
@@ -22,13 +24,11 @@ function initTheme() {
 const _SVG_ATTRS = 'viewBox="0 0 24 24" style="display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"';
 function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    const icon = document.getElementById('theme-toggle-icon');
-    if (!icon) return;
-    if (theme === 'light') {
-        icon.innerHTML = `<svg ${_SVG_ATTRS}><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
-    } else {
-        icon.innerHTML = `<svg ${_SVG_ATTRS}><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>`;
-    }
+    const svgLight = `<svg ${_SVG_ATTRS}><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+    const svgDark = `<svg ${_SVG_ATTRS}><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>`;
+    document.querySelectorAll('.theme-toggle-icon').forEach(icon => {
+        icon.innerHTML = theme === 'light' ? svgLight : svgDark;
+    });
 }
 
 function _spawnParticles(cx, cy, count) {
@@ -58,11 +58,11 @@ function _spawnShockwave(cx, cy) {
     setTimeout(() => ring.remove(), 900);
 }
 
-function toggleTheme() {
+function toggleTheme(ev) {
     const current = document.documentElement.getAttribute('data-theme') || 'dark';
     const next = current === 'dark' ? 'light' : 'dark';
 
-    const btn    = document.getElementById('theme-toggle-icon');
+    const btn = (ev && ev.currentTarget) || document.querySelector('.theme-toggle-icon');
     const ripple = document.getElementById('theme-ripple');
 
     const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth - 40, top: 24, width: 32, height: 32 };
@@ -76,7 +76,8 @@ function toggleTheme() {
         setTimeout(() => btn.classList.remove('switching'), 900);
     }
 
-    _spawnParticles(cx, cy, 12);
+    const _coarseTap = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+    _spawnParticles(cx, cy, _coarseTap ? 5 : 12);
     _spawnShockwave(cx, cy);
 
     if (ripple) {
@@ -118,6 +119,31 @@ function toggleTheme() {
 }
 
 initTheme();
+
+// ============================================================================
+// Устройство / режим вёрстки (данные для CSS и логики; сессия не нужна — всё в браузере)
+// data-server-device — подсказка с сервера (UA / Client Hints); data-device — актуально после ресайза
+// ============================================================================
+function syncDeviceContext() {
+    const html = document.documentElement;
+    const w = window.innerWidth;
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+    let tier = 'desktop';
+    if (w <= 900) {
+        tier = 'mobile';
+    } else if (coarse && w <= 1200) {
+        tier = 'tablet';
+    }
+    html.dataset.device = tier;
+    html.dataset.pointer = coarse ? 'coarse' : 'fine';
+}
+syncDeviceContext();
+let _deviceResizeTimer;
+window.addEventListener('resize', () => {
+    clearTimeout(_deviceResizeTimer);
+    _deviceResizeTimer = setTimeout(syncDeviceContext, 120);
+});
+window.addEventListener('orientationchange', () => setTimeout(syncDeviceContext, 280));
 
 // ============================================================================
 // ACCENT COLOR
@@ -333,11 +359,18 @@ function _setupPickerEvents() {
     if (svWrap._cpReady) return;
     svWrap._cpReady = true;
 
-    const getSVFromEvent = e => {
+    const getSVFromPoint = (clientX, clientY) => {
         const rect = svWrap.getBoundingClientRect();
-        const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-        const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+        const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        const y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
         return { s: x, v: 1 - y };
+    };
+    const getSVFromEvent = e => getSVFromPoint(e.clientX, e.clientY);
+    const setHueFromClientX = clientX => {
+        const rect = hueWrap.getBoundingClientRect();
+        _cp.h = Math.max(0, Math.min(360, (clientX - rect.left) / rect.width * 360));
+        _drawSV();
+        _updatePickerUI();
     };
 
     svWrap.addEventListener('mousedown', e => {
@@ -349,10 +382,7 @@ function _setupPickerEvents() {
 
     hueWrap.addEventListener('mousedown', e => {
         _cp.draggingHue = true;
-        const rect = hueWrap.getBoundingClientRect();
-        _cp.h = Math.max(0, Math.min(360, (e.clientX - rect.left) / rect.width * 360));
-        _drawSV();
-        _updatePickerUI();
+        setHueFromClientX(e.clientX);
     });
 
     document.addEventListener('mousemove', e => {
@@ -362,14 +392,47 @@ function _setupPickerEvents() {
             _updatePickerUI();
         }
         if (_cp.draggingHue) {
-            const rect = hueWrap.getBoundingClientRect();
-            _cp.h = Math.max(0, Math.min(360, (e.clientX - rect.left) / rect.width * 360));
-            _drawSV();
-            _updatePickerUI();
+            setHueFromClientX(e.clientX);
         }
     });
 
     document.addEventListener('mouseup', () => {
+        _cp.draggingSV = false;
+        _cp.draggingHue = false;
+    });
+
+    svWrap.addEventListener('touchstart', e => {
+        if (e.targetTouches.length !== 1) return;
+        e.preventDefault();
+        _cp.draggingSV = true;
+        const t = e.targetTouches[0];
+        const { s, v } = getSVFromPoint(t.clientX, t.clientY);
+        _cp.s = s; _cp.v = v;
+        _updatePickerUI();
+    }, { passive: false });
+    hueWrap.addEventListener('touchstart', e => {
+        if (e.targetTouches.length !== 1) return;
+        e.preventDefault();
+        _cp.draggingHue = true;
+        setHueFromClientX(e.targetTouches[0].clientX);
+    }, { passive: false });
+    document.addEventListener('touchmove', e => {
+        if (!_cp.draggingSV && !_cp.draggingHue) return;
+        const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+        if (!t) return;
+        e.preventDefault();
+        if (_cp.draggingSV) {
+            const { s, v } = getSVFromPoint(t.clientX, t.clientY);
+            _cp.s = s; _cp.v = v;
+            _updatePickerUI();
+        }
+        if (_cp.draggingHue) setHueFromClientX(t.clientX);
+    }, { passive: false });
+    document.addEventListener('touchend', () => {
+        _cp.draggingSV = false;
+        _cp.draggingHue = false;
+    });
+    document.addEventListener('touchcancel', () => {
         _cp.draggingSV = false;
         _cp.draggingHue = false;
     });
@@ -527,10 +590,52 @@ function _initAnimations() {
 // ============================================================================
 // NAVIGATION
 // ============================================================================
+const MOBILE_PAGE_TITLES = {
+    accounts: 'Аккаунты',
+    template: 'Шаблон',
+    settings: 'Настройки',
+    send: 'Отправка',
+    analytics: 'Аналитика',
+};
+
+function isMobileNavLayout() {
+    return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 900px)').matches;
+}
+
+function closeMobileNav() {
+    document.body.classList.remove('mobile-nav-open');
+    const btn = document.getElementById('btn-mobile-menu');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function openMobileNav() {
+    document.body.classList.add('mobile-nav-open');
+    const btn = document.getElementById('btn-mobile-menu');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+
+function toggleMobileNav() {
+    if (document.body.classList.contains('mobile-nav-open')) closeMobileNav();
+    else openMobileNav();
+}
+
+function updateMobileHeaderTitle(page) {
+    const el = document.getElementById('mobile-page-title');
+    if (el) el.textContent = MOBILE_PAGE_TITLES[page] || 'WebFlow Sender';
+}
+
 function setupNav() {
     const saved = localStorage.getItem('currentPage') || 'accounts';
     switchPage(saved);
-    document.querySelectorAll('.nav-item').forEach(i => i.addEventListener('click', () => switchPage(i.dataset.page)));
+    document.querySelectorAll('.nav-item').forEach(i =>
+        i.addEventListener('click', () => {
+            switchPage(i.dataset.page);
+            if (isMobileNavLayout()) closeMobileNav();
+        })
+    );
+    window.addEventListener('resize', () => {
+        if (!isMobileNavLayout()) closeMobileNav();
+    });
 }
 function switchPage(page) {
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
@@ -540,6 +645,7 @@ function switchPage(page) {
     if (nav) nav.classList.add('active');
     if (pg) pg.classList.add('active');
     localStorage.setItem('currentPage', page);
+    updateMobileHeaderTitle(page);
     if (page === 'template') loadTemplate();
     if (page === 'send') updateSendInfo();
     if (page === 'analytics') loadAnalytics();
@@ -1570,12 +1676,18 @@ function updateSidebarStatus(status, current, total) {
 }
 function startPolling() {
     if(statusInterval) clearInterval(statusInterval);
+    _pollLastLogKey = '';
+    _pollLastPct = -1;
+    const pollMs = (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches) ? 2200 : 1500;
     statusInterval = setInterval(async()=>{
         try{
             const r=await fetch('/api/status'); const d=await r.json();
             const pct=d.total>0?Math.round(d.current/d.total*100):0;
-            document.getElementById('progress-percent').textContent=pct+'%';
-            document.getElementById('progress-fill').style.width=pct+'%';
+            if (pct !== _pollLastPct) {
+                _pollLastPct = pct;
+                document.getElementById('progress-percent').textContent=pct+'%';
+                document.getElementById('progress-fill').style.width=pct+'%';
+            }
             document.getElementById('progress-text').textContent=`${d.current} / ${d.total}`;
             document.getElementById('send-success').textContent=d.success;
             document.getElementById('send-errors').textContent=d.failed;
@@ -1586,16 +1698,23 @@ function startPolling() {
                 syncTimerFromServer(d.elapsed || 0, d.current, d.total, d.status);
             }
             const lc=document.getElementById('logs-container');
-            if(d.logs&&d.logs.length){
-                // Проверяем, скроллил ли пользователь вверх (не авто-скроллить если читает старые логи)
-                const wasAtBottom = lc.scrollHeight - lc.scrollTop - lc.clientHeight < 60;
-                lc.innerHTML=d.logs.slice(-100).map(l=>{
-                    const clr=l.level==='error'?'var(--danger)':l.level==='success'?'var(--success)':'var(--text-secondary)';
-                    let msg = esc(l.message).replace(/(#[A-Z_0-9]+)/g, '<span style="background:var(--primary-muted);color:var(--primary);padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;">$1</span>');
-                    return `<div style="margin-bottom:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><div style="display:flex;justify-content:space-between;font-size:10px;opacity:0.4;margin-bottom:2px;"><span>${l.timestamp}</span></div><div style="color:${clr};font-size:11px;">${msg}</div></div>`;
-                }).join('');
-                // Автоскролл вниз к новым логам (если пользователь не скроллил вверх)
-                if (wasAtBottom) lc.scrollTop = lc.scrollHeight;
+            if(d.logs&&d.logs.length&&lc){
+                const logs=d.logs.slice(-100);
+                const last=logs[logs.length-1];
+                const logKey=logs.length+'\n'+(last?last.timestamp+'\n'+last.message+'\n'+last.level:'');
+                if(logKey!==_pollLastLogKey){
+                    _pollLastLogKey=logKey;
+                    const wasAtBottom = lc.scrollHeight - lc.scrollTop - lc.clientHeight < 60;
+                    lc.innerHTML=logs.map(l=>{
+                        const clr=l.level==='error'?'var(--danger)':l.level==='success'?'var(--success)':'var(--text-secondary)';
+                        let msg = esc(l.message).replace(/(#[A-Z_0-9]+)/g, '<span style="background:var(--primary-muted);color:var(--primary);padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;">$1</span>');
+                        return `<div style="margin-bottom:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><div style="display:flex;justify-content:space-between;font-size:10px;opacity:0.4;margin-bottom:2px;"><span>${l.timestamp}</span></div><div style="color:${clr};font-size:11px;">${msg}</div></div>`;
+                    }).join('');
+                    if (wasAtBottom) lc.scrollTop = lc.scrollHeight;
+                }
+            } else if (_pollLastLogKey !== '' && lc) {
+                _pollLastLogKey = '';
+                lc.innerHTML = '';
             }
             if(['completed','error','stopped','idle'].includes(d.status)){
                 if(d.status!=='idle'){
@@ -1617,7 +1736,7 @@ function startPolling() {
                 setTimeout(() => updateSidebarStatus('idle'), 5000);
             }
         }catch(e){}
-    },1500);
+    },pollMs);
 }
 
 // ============================================================================
@@ -2044,9 +2163,10 @@ document.addEventListener('keydown', e => {
         const currentPage = localStorage.getItem('currentPage') || 'accounts';
         if (currentPage === 'send') startSending();
     }
-    // Escape - close modals
+    // Escape - close modals & mobile drawer
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active'));
+        if (document.body.classList.contains('mobile-nav-open')) closeMobileNav();
         if (window._cursorResetMagnet) window._cursorResetMagnet();
     }
 });

@@ -1,3 +1,6 @@
+# Изолированные данные по cookie-сессии браузера
+user_data/
+
 # Конфигурация и секреты (не публиковать в репозитории)
 config.json
 cookies.json
@@ -6,6 +9,9 @@ custom_templates.json
 .env
 .env.local
 *.env
+
+# Render (Blueprint не в репозитории — настройки только в панели Render)
+render.yaml
 
 # Аккаунты (токены, прокси)
 accounts/*.json
