@@ -1,5 +1,3 @@
-> **English** | [Русский](README.ru.md)
-
 <h1 align="center">WebFlow Sender</h1>
 
 <p align="center">
