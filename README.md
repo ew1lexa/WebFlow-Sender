@@ -388,45 +388,45 @@ All endpoints are served by the Flask backend at `http://localhost:5000`.
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/accounts.png" />
-    <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/light/accounts.png" />
-    <img src="docs/screenshots/dark/accounts.png" width="800" alt="Accounts" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/accounts.png" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/light/accounts.png" />
+    <img src="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/accounts.png" width="800" alt="Accounts" />
   </picture>
   <br><em>Account management — multi-account profiles with proxy settings, export/import</em>
 </p>
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/template.png" />
-    <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/light/template.png" />
-    <img src="docs/screenshots/dark/template.png" width="800" alt="Template Editor" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/template.png" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/light/template.png" />
+    <img src="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/template.png" width="800" alt="Template Editor" />
   </picture>
   <br><em>Template editor — brand templates, Code/Preview toggle with Shadow DOM, sender name</em>
 </p>
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/settings.png" />
-    <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/light/settings.png" />
-    <img src="docs/screenshots/dark/settings.png" width="800" alt="Settings" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/settings.png" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/light/settings.png" />
+    <img src="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/settings.png" width="800" alt="Settings" />
   </picture>
   <br><em>Settings — auto-config from URL, authorization tokens, batch speed, anti-spam delays</em>
 </p>
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/sending.png" />
-    <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/light/sending.png" />
-    <img src="docs/screenshots/dark/sending.png" width="800" alt="Sending" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/sending.png" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/light/sending.png" />
+    <img src="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/sending.png" width="800" alt="Sending" />
   </picture>
   <br><em>Sending — mode selection, drag-and-drop recipients, live timer with ETA, collapsible error reference</em>
 </p>
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark/analytics.png" />
-    <source media="(prefers-color-scheme: light)" srcset="docs/screenshots/light/analytics.png" />
-    <img src="docs/screenshots/dark/analytics.png" width="800" alt="Analytics" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/analytics.png" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/light/analytics.png" />
+    <img src="https://raw.githubusercontent.com/ew1lexa/WebFlow-Sender/assets-media/docs/screenshots/dark/analytics.png" width="800" alt="Analytics" />
   </picture>
   <br><em>Analytics — 14-day delivery chart, top accounts, recent mailings with success/fail stats</em>
 </p>
