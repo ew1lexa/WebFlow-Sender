@@ -1822,7 +1822,7 @@ function renderAnalytics(data) {
     data.forEach(r => { accMap[r.account] = (accMap[r.account] || 0) + r.total; });
     const topAccounts = Object.entries(accMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
     document.getElementById('analytics-top-accounts').innerHTML = topAccounts.map((a, i) =>
-        `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+        `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
             <span style="font-weight:600;"><span style="color:var(--text-tertiary); margin-right:8px;">${i+1}.</span>${esc(a[0])}</span>
             <span style="color:var(--primary); font-weight:700;">${a[1]}</span>
         </div>`
@@ -1831,7 +1831,7 @@ function renderAnalytics(data) {
     // Recent mailings
     const recent = data.slice(-5).reverse();
     document.getElementById('analytics-recent').innerHTML = recent.map(r =>
-        `<div style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+        `<div style="padding:8px 0; border-bottom:1px solid var(--border);">
             <div class="flex-between" style="margin-bottom:4px;">
                 <span style="font-weight:600; font-size:12px;">${esc(r.account)}</span>
                 <span style="font-size:10px; color:var(--text-tertiary);">${r.date} ${r.time || ''}</span>

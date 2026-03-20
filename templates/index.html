@@ -1496,8 +1496,8 @@
         [data-theme="light"] .stepper-btn:hover { background: var(--primary-muted) !important; }
         [data-theme="light"] input:focus, [data-theme="light"] textarea:focus, [data-theme="light"] select:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 8%, transparent) !important; }
         
-        [data-theme="light"] .chart-bar { background: linear-gradient(180deg, var(--primary), #b56930); }
-        [data-theme="light"] .chart-bar:hover { background: linear-gradient(180deg, #e0a070, var(--primary)); }
+        [data-theme="light"] .chart-bar { background: linear-gradient(180deg, var(--primary), var(--primary-hover)); }
+        [data-theme="light"] .chart-bar:hover { background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 78%, #fff), var(--primary)); }
         [data-theme="light"] .timer-display { background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.06) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         [data-theme="light"] .timer-active .timer-display { background: linear-gradient(180deg, #a06030 0%, var(--primary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         [data-theme="light"] .timer-done .timer-display { background: linear-gradient(180deg, #2a8070 0%, var(--success) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
@@ -1563,11 +1563,11 @@
         /* Analytics chart bar */
         .chart-bar {
             flex:1; min-width:0; border-radius:4px 4px 0 0;
-            background: linear-gradient(180deg, #e8915a, #c97a42);
+            background: linear-gradient(180deg, var(--primary), var(--primary-hover));
             transition: height 0.4s ease;
             position:relative;
         }
-        .chart-bar:hover { background: linear-gradient(180deg, #f0a878, #e8915a); }
+        .chart-bar:hover { background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 82%, #fff), var(--primary)); }
         .chart-bar-label {
             position:absolute; bottom:-20px; left:50%; transform:translateX(-50%);
             font-size:8px; color:var(--text-tertiary); white-space:nowrap;
