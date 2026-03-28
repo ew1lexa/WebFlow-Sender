@@ -598,6 +598,14 @@ const MOBILE_PAGE_TITLES = {
     analytics: 'Аналитика',
 };
 
+/** Вкладки SPA — хеш в URL (#settings) надёжнее localStorage на мобильных при обновлении страницы */
+const VALID_PAGES = Object.keys(MOBILE_PAGE_TITLES);
+
+function getPageFromHash() {
+    const h = (location.hash || '').replace(/^#/, '').trim();
+    return VALID_PAGES.includes(h) ? h : null;
+}
+
 function isMobileNavLayout() {
     return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 900px)').matches;
 }
@@ -625,7 +633,7 @@ function updateMobileHeaderTitle(page) {
 }
 
 function setupNav() {
-    const saved = localStorage.getItem('currentPage') || 'accounts';
+    const saved = getPageFromHash() || localStorage.getItem('currentPage') || 'accounts';
     switchPage(saved);
     document.querySelectorAll('.nav-item').forEach(i =>
         i.addEventListener('click', () => {
@@ -636,14 +644,26 @@ function setupNav() {
     window.addEventListener('resize', () => {
         if (!isMobileNavLayout()) closeMobileNav();
     });
+    window.addEventListener('hashchange', () => {
+        const p = getPageFromHash();
+        if (p) switchPage(p);
+    });
 }
 function switchPage(page) {
+    if (!VALID_PAGES.includes(page)) page = 'accounts';
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const nav = document.querySelector(`.nav-item[data-page="${page}"]`);
     const pg = document.getElementById(`page-${page}`);
     if (nav) nav.classList.add('active');
     if (pg) pg.classList.add('active');
+    if (getPageFromHash() !== page) {
+        try {
+            history.replaceState(null, '', '#' + page);
+        } catch (e) {
+            location.hash = page;
+        }
+    }
     localStorage.setItem('currentPage', page);
     updateMobileHeaderTitle(page);
     if (page === 'template') loadTemplate();
